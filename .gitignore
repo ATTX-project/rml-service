@@ -1,4 +1,3 @@
-/RMLService/.nb-gradle/
-/RMLService/build/
-/RMLService/.gradle/
+/build/
+/.gradle/
 /.nb-gradle/

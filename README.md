@@ -1,1 +1,6 @@
 # rml-service
+
+
+```
+gradle bootRun
+```
