@@ -13,6 +13,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.core.env.Environment;
 import org.springframework.jms.annotation.EnableJms;
 import org.springframework.jms.config.DefaultJmsListenerContainerFactory;
 import org.springframework.jms.core.JmsMessagingTemplate;
@@ -23,16 +24,20 @@ import org.springframework.jms.core.JmsMessagingTemplate;
  */
 @SpringBootApplication
 @EnableJms
-@PropertySource(name = "properties", value = "RMLService.properties")
+@PropertySource("classpath:RMLService.properties")
 public class RMLService {
 
-    @Value("${broker-url}")
-    private String brokerUrl;
+    @Autowired
+    private Environment env;
+    
+    @Value("${default-broker-url}")
+    private String defaultBrokerUrl;
 
+    
     @Bean
     public ActiveMQConnectionFactory activeMQConnectionFactory() {
-        ActiveMQConnectionFactory activeMQConnectionFactory = new ActiveMQConnectionFactory();
-        activeMQConnectionFactory.setBrokerURL(brokerUrl);
+        ActiveMQConnectionFactory activeMQConnectionFactory = new ActiveMQConnectionFactory();        
+        activeMQConnectionFactory.setBrokerURL(env.getProperty("brokerURL", defaultBrokerUrl));
 
         return activeMQConnectionFactory;
     }
@@ -59,6 +64,7 @@ public class RMLService {
     }
 
     public static void main(String[] args) throws InterruptedException {
+        
         SpringApplication.run(RMLService.class, args);
     }
 }
