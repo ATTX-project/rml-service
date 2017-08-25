@@ -6,6 +6,15 @@ apply plugin: 'java'
 apply plugin: 'application'
 apply plugin: 'maven-publish'
 
+ext {
+    imageRepo = "attx-dev"
+    artifactRepoPort = "8081"
+}
+
+if (!project.hasProperty("artifactRepoURL")) {
+    ext.artifactRepoURL = "http://${imageRepo}:${artifactRepoPort}/repository/attx-releases"
+}
+
 compileJava {
     sourceCompatibility = 1.8
     targetCompatibility = 1.8
@@ -25,13 +34,16 @@ publish {
 } 
 
 repositories {
+    
+    maven { url "$artifactRepoURL"}
     mavenCentral()
 }
 
 dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.10'    
     compile "org.springframework.boot:spring-boot-starter-activemq"
-    
+    compile "org.uh.hulib.attx.wc.uv:uv-common:1.0-SNAPSHOT"
+    compile "com.fasterxml.jackson.core:jackson-databind:2.9.0"
 }
 
 bootRun {
