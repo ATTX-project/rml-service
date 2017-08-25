@@ -5,6 +5,7 @@
  */
 package org.uh.hulib.attx.services.rml;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
@@ -22,6 +23,7 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.annotation.Headers;
 import org.springframework.stereotype.Component;
+import org.uh.hulib.attx.wc.uv.common.pojos.RMLServiceResponse;
 
 /**
  *
@@ -77,13 +79,20 @@ public class MessageListener {
             }            
         }
         LOG.info("received message='{}', correlationID='{}'", message.getText(), correlationID);
-        URI output = transformer.transformToRDF(new URI("file://input"), "conf");
+        String outputURI = transformer.transformToRDF(new URI("file://input"), "conf");
         
         if(!"".equals(replyTo)) {
-            LOG.info("Create output: "+ output.toString());
+            LOG.info("Create output: "+ outputURI);
             Map<String, Object> responseHeaders = new HashMap<String, Object>();
             responseHeaders.put("correlation-id", correlationID);
-            template.convertAndSend(replyTo, output.toString(), responseHeaders);
+            
+            RMLServiceResponse response = new RMLServiceResponse();
+            response.setStatus("SUCCESS");
+            response.setTransformedDatasetURL(outputURI);
+            
+            ObjectMapper mapper = new ObjectMapper();
+            
+            template.convertAndSend(replyTo, mapper.writeValueAsString(response), responseHeaders);
             LOG.info("Send reply to: " + replyTo);
         }
         else {

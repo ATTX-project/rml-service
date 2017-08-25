@@ -21,7 +21,7 @@ public class RMLIOTransformer implements Transformer {
     private static final Logger LOG = LoggerFactory.getLogger(RMLIOTransformer.class);    
     
     @Override
-    public URI transformToRDF(URI input, String configuration) {
+    public String transformToRDF(URI input, String configuration) {
         LOG.info("Transforming to RDF");
         LOG.info(input.toString());
         
@@ -29,7 +29,7 @@ public class RMLIOTransformer implements Transformer {
         try {
             Thread.sleep(2000);
             LOG.info("Done");
-            return new URI("file://output");
+            return "file://output";
         } catch (Exception ex) {
             LOG.error(null, ex);
         }

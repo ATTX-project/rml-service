@@ -15,5 +15,5 @@ import org.springframework.stereotype.Service;
 
 public interface Transformer {
   
-    public URI transformToRDF(URI input, String configuration);
+    public String transformToRDF(URI input, String configuration);
 }
