@@ -5,6 +5,8 @@
  */
 package org.uh.hulib.attx.services.rml;
 
+import java.io.InputStream;
+import java.io.Reader;
 import java.net.URI;
 import org.springframework.stereotype.Service;
 
@@ -15,5 +17,5 @@ import org.springframework.stereotype.Service;
 
 public interface Transformer {
   
-    public String transformToRDF(URI input, String configuration);
+    public String transformToRDF(Reader input, String configuration, String workID);
 }

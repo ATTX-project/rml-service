@@ -26,18 +26,23 @@ import org.springframework.jms.core.JmsMessagingTemplate;
 @EnableJms
 @PropertySource("classpath:RMLService.properties")
 public class RMLService {
+    
+    public static final String defaultAgentID = "rmlservice";
 
     @Autowired
-    private Environment env;
+    private static Environment env;
     
     @Value("${default-broker-url}")
     private String defaultBrokerUrl;
 
+    public static String getAgentID() {
+        return env.getProperty("agentID", defaultAgentID);
+    }
     
     @Bean
     public ActiveMQConnectionFactory activeMQConnectionFactory() {
         ActiveMQConnectionFactory activeMQConnectionFactory = new ActiveMQConnectionFactory();        
-        activeMQConnectionFactory.setBrokerURL(env.getProperty("brokerURL", defaultBrokerUrl));
+        activeMQConnectionFactory.setBrokerURL(RMLService.env.getProperty("brokerURL", defaultBrokerUrl));
 
         return activeMQConnectionFactory;
     }

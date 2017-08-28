@@ -6,6 +6,12 @@
 package org.uh.hulib.attx.services.rml;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileReader;
+import java.io.InputStream;
+import java.io.Reader;
+import java.io.StringReader;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
@@ -23,6 +29,7 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.annotation.Headers;
 import org.springframework.stereotype.Component;
+import org.uh.hulib.attx.wc.uv.common.pojos.RMLServiceRequest;
 import org.uh.hulib.attx.wc.uv.common.pojos.RMLServiceResponse;
 
 /**
@@ -79,7 +86,22 @@ public class MessageListener {
             }            
         }
         LOG.info("received message='{}', correlationID='{}'", message.getText(), correlationID);
-        String outputURI = transformer.transformToRDF(new URI("file://input"), "conf");
+        
+        ObjectMapper mapper = new ObjectMapper();
+        
+        RMLServiceRequest request = mapper.readValue(message.getText(), RMLServiceRequest.class);
+        
+        Reader input = null;
+        if(request.getSourceURI() !=null) {
+            input = new FileReader(new File(new URI(request.getSourceURI())));
+        }
+        else {
+            input = new StringReader(request.getSourceData());
+        }
+        
+        String outputURI = transformer.transformToRDF(input, "conf", correlationID);
+        
+        input.close();
         
         if(!"".equals(replyTo)) {
             LOG.info("Create output: "+ outputURI);
@@ -90,7 +112,7 @@ public class MessageListener {
             response.setStatus("SUCCESS");
             response.setTransformedDatasetURL(outputURI);
             
-            ObjectMapper mapper = new ObjectMapper();
+            
             
             template.convertAndSend(replyTo, mapper.writeValueAsString(response), responseHeaders);
             LOG.info("Send reply to: " + replyTo);

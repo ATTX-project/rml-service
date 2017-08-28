@@ -5,6 +5,10 @@
  */
 package org.uh.hulib.attx.services.rml;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.InputStream;
+import java.io.Reader;
 import java.net.URI;
 import java.util.logging.Level;
 import org.slf4j.Logger;
@@ -21,15 +25,20 @@ public class RMLIOTransformer implements Transformer {
     private static final Logger LOG = LoggerFactory.getLogger(RMLIOTransformer.class);    
     
     @Override
-    public String transformToRDF(URI input, String configuration) {
+    public String transformToRDF(Reader input, String configuration, String workID) {
         LOG.info("Transforming to RDF");
-        LOG.info(input.toString());
+       
         
         
         try {
+            LOG.info("Input is ready: " + input.ready());
+            File outputDir = new File("/attx-sb-shared/" + RMLService.getAgentID() + "/" + workID);
+            File outputFile = new File(outputDir, "result.nt");
+            FileWriter writer = new FileWriter(outputFile);
+            writer.write("<http://one.example/subject1> <http://one.example/predicate1> <http://one.example/object1> .");
             Thread.sleep(2000);
             LOG.info("Done");
-            return "file://output";
+            return outputFile.toURI().toString();
         } catch (Exception ex) {
             LOG.error(null, ex);
         }
