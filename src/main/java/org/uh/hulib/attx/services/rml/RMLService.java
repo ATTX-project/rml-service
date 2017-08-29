@@ -30,19 +30,16 @@ public class RMLService {
     public static final String defaultAgentID = "rmlservice";
 
     @Autowired
-    private static Environment env;
+    private Environment env;
     
     @Value("${default-broker-url}")
     private String defaultBrokerUrl;
 
-    public static String getAgentID() {
-        return env.getProperty("agentID", defaultAgentID);
-    }
     
     @Bean
     public ActiveMQConnectionFactory activeMQConnectionFactory() {
         ActiveMQConnectionFactory activeMQConnectionFactory = new ActiveMQConnectionFactory();        
-        activeMQConnectionFactory.setBrokerURL(RMLService.env.getProperty("brokerURL", defaultBrokerUrl));
+        activeMQConnectionFactory.setBrokerURL(env.getProperty("brokerURL", defaultBrokerUrl));
 
         return activeMQConnectionFactory;
     }

@@ -14,6 +14,14 @@ ext {
 if (!project.hasProperty("artifactRepoURL")) {
     ext.artifactRepoURL = "http://${imageRepo}:${artifactRepoPort}/repository/attx-releases"
 }
+if (!project.hasProperty("artifactRepoUser")) {
+    ext.artifactRepoUser = ""
+}
+
+if (!project.hasProperty("artifactRepoPassword")) {
+    ext.artifactRepoPassword = ""
+}
+
 
 compileJava {
     sourceCompatibility = 1.8
