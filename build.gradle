@@ -77,7 +77,7 @@ bootRun {
 publishing {
     repositories {
         maven {
-              url "${artifactRepoURL}"
+              url "${artifactRepoURL}/repository/attx-releases"
               credentials {
                   username "${artifactRepoUser}"
                   password "${artifactRepoPassword}"
