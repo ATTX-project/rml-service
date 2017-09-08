@@ -12,7 +12,7 @@ ext {
 }
 
 if (!project.hasProperty("artifactRepoURL")) {
-    ext.artifactRepoURL = "http://${imageRepo}:${artifactRepoPort}/repository/attx-releases"
+    ext.artifactRepoURL = "http://${imageRepo}:${artifactRepoPort}"
 }
 if (!project.hasProperty("artifactRepoUser")) {
     ext.artifactRepoUser = ""
@@ -43,8 +43,8 @@ publish {
 
 repositories {
     
-    maven { url "$artifactRepoURL"}
-    maven { url "http://${imageRepo}:${artifactRepoPort}/repository/internal"}
+    maven { url "$artifactRepoURL/repository/attx-releases"}
+    maven { url "$artifactRepoURL/repository/internal"}
     mavenCentral()
 }
 
