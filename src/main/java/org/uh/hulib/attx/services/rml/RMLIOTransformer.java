@@ -5,60 +5,53 @@
  */
 package org.uh.hulib.attx.services.rml;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.InputStream;
-import java.io.Reader;
-import java.net.URI;
-import java.util.logging.Level;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.env.Environment;
+import be.ugent.mmlab.rml.core.RMLEngine;
+import be.ugent.mmlab.rml.core.StdRMLEngine;
+import be.ugent.mmlab.rml.mapdochandler.extraction.std.StdRMLMappingFactory;
+import be.ugent.mmlab.rml.mapdochandler.retrieval.RMLDocRetrieval;
+import be.ugent.mmlab.rml.model.RMLMapping;
+import be.ugent.mmlab.rml.model.dataset.RMLDataset;
+import java.io.FileOutputStream;
+import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
+import org.eclipse.rdf4j.repository.Repository;
+import org.eclipse.rdf4j.rio.RDFFormat;
 import org.springframework.stereotype.Service;
-import static org.uh.hulib.attx.services.rml.RMLService.defaultAgentID;
 
 /**
  *
  * @author jkesanie
  */
 @Service
-public class RMLIOTransformer implements Transformer {
+public class RMLIOTransformer {
+   
+    public void transformToRDF(URL input, URL outputFile, URL configuration) throws Exception {
+        Map<String, String> parameters = new HashMap<String, String>();
+        parameters.put("filename",input.getFile());                
 
-    private static final Logger LOG = LoggerFactory.getLogger(RMLIOTransformer.class);    
-    
-    @Autowired
-    private Environment env;
-    
-    public String getAgentID() {
-        return env.getProperty("agentID", defaultAgentID);
-    }
-    
-    @Override
-    public String transformToRDF(Reader input, String configuration, String workID) {
-        LOG.info("Transforming to RDF");
-       
-        
-        
-        try {
-            LOG.info("Input is ready: " + input.ready());
-            File outputDir = new File("/attx-sb-shared/" + getAgentID() + "/" + workID);
-            if(outputDir.mkdirs()) {
-                File outputFile = new File(outputDir, "result.nt");
+        StdRMLMappingFactory mappingFactory = new StdRMLMappingFactory();
+        RMLDocRetrieval mapDocRetrieval = new RMLDocRetrieval();
+        Repository repository = mapDocRetrieval.getMappingDoc(
+            configuration.getFile(), RDFFormat.TURTLE);
+
+        RMLEngine engine = new StdRMLEngine();
+        RMLMapping mapping = mappingFactory.extractRMLMapping(repository);
+        RMLDataset output = engine.chooseSesameDataSet("dataset", null, null);
+        output = engine.runRMLMapping(output,
+            mapping, "http://example.com", parameters, null);
+
+        if(output != null) {
+            FileOutputStream out = new FileOutputStream(outputFile.getFile());
+            output.dumpRDF(out, RDFFormat.NTRIPLES);
 
 
-                FileWriter writer = new FileWriter(outputFile);
-                writer.write("<http://one.example/subject1> <http://one.example/predicate1> <http://one.example/object1> .");
-                Thread.sleep(2000);
-                LOG.info("Done");
-                return outputFile.toURI().toString();
-                
-            }
-        } catch (Exception ex) {
-            LOG.error(null, ex);
         }
-        LOG.info("Error");
-        return null;
-    }
-    
+        else {
+
+
+            throw new Exception("Error occured");
+        }
+        
+    }    
 }
