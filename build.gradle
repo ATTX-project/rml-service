@@ -71,6 +71,12 @@ bootRun {
     if ( project.hasProperty('brokerURL') ) {
         args project.brokerURL
     }
+    if ( project.hasProperty('queue') ) {
+        args project.queue
+    }
+    if ( project.hasProperty('exchange') ) {
+        args project.exchange
+    }
 }
 
 

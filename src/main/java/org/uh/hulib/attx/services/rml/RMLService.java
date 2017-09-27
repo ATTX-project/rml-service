@@ -54,6 +54,11 @@ public class RMLService {
 
     @Value("${default-queue}")
     private String defaultQueue;
+
+    String getExchangeName() {
+        return env.getProperty("exchange", defaultExchange);
+    }
+
     
     String getQueueName() {
         return env.getProperty("queue", defaultQueue);
@@ -71,7 +76,7 @@ public class RMLService {
     
     @Bean
     DirectExchange exchange() {        
-        return new DirectExchange("", true, true);
+        return new DirectExchange(getExchangeName(), true, true);
     }
     
 
