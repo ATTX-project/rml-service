@@ -5,22 +5,11 @@
  */
 package org.uh.hulib.attx.services.rml;
 
-import be.ugent.mmlab.rml.core.RMLEngine;
-import be.ugent.mmlab.rml.core.StdRMLEngine;
-import be.ugent.mmlab.rml.mapdochandler.extraction.std.StdRMLMappingFactory;
-import be.ugent.mmlab.rml.mapdochandler.retrieval.RMLDocRetrieval;
-import be.ugent.mmlab.rml.model.RMLMapping;
-import be.ugent.mmlab.rml.model.dataset.RMLDataset;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.net.URL;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
 import org.apache.commons.io.FileUtils;
-import org.eclipse.rdf4j.repository.Repository;
-import org.eclipse.rdf4j.rio.RDFFormat;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -30,6 +19,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
+import org.uh.hulib.attx.wc.uv.common.pojos.RMLServiceInput;
+import org.uh.hulib.attx.wc.uv.common.pojos.RMLServiceOutput;
 import org.uh.hulib.attx.wc.uv.common.pojos.RMLServiceRequest;
 import org.uh.hulib.attx.wc.uv.common.pojos.RMLServiceResponse;
 
@@ -71,19 +62,21 @@ public class RMLServiceMessageListener {
 
             RMLServiceRequest request = mapper.readValue(new String(message.getBody(), "UTF-8"), RMLServiceRequest.class);
 
-            System.out.println(request.getMapping());
-            System.out.println(request.getSourceData());
+            System.out.println(request.getPayload().getMapping());
+            System.out.println(request.getPayload().getSourceData());
+            
+            RMLServiceInput payload = request.getPayload();
             URL input = null;
             File tempFile = null;
-            if (request.getSourceURI() != null) {
-                input = new URL(request.getSourceURI());
+            if (payload.getSourceURI() != null) {
+                input = new URL(payload.getSourceURI());
             } else {
                 tempFile = File.createTempFile("rmlservice", "source");
-                FileUtils.write(tempFile, request.getSourceData(), "UTF-8");
+                FileUtils.write(tempFile, payload.getSourceData(), "UTF-8");
                 input = tempFile.toURI().toURL();
             }
             File tempFileConfig = File.createTempFile("rmlservice", "config");
-            FileUtils.write(tempFileConfig, request.getMapping(), "UTF-8");
+            FileUtils.write(tempFileConfig, payload.getMapping(), "UTF-8");
             File outputDir = new File("/attx-sb-shared/" + getAgentID() + "/" + (correlationID != null ? correlationID : UUID.randomUUID().toString()));
 
             outputDir.mkdirs(); // TODO: add error handling
@@ -97,9 +90,12 @@ public class RMLServiceMessageListener {
             }
 
             RMLServiceResponse response = new RMLServiceResponse();
-            response.setStatus("SUCCESS");
-            response.setTransformedDatasetURL(output.toURI().toURL().toString());
+            RMLServiceOutput responsePayload = new RMLServiceOutput();
+            responsePayload.setStatus("SUCCESS");
+            responsePayload.setTransformedDatasetURL(output.toURI().toURL().toString());
 
+            response.setPayload(responsePayload);
+            
             System.out.println("Done");
             
             if(correlationID != null) {
