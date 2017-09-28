@@ -84,7 +84,7 @@ public class RMLServiceMessageListener {
             }
             File tempFileConfig = File.createTempFile("rmlservice", "config");
             FileUtils.write(tempFileConfig, request.getMapping(), "UTF-8");
-            File outputDir = new File("attx-sb-shared/" + getAgentID() + "/" + (correlationID != null ? correlationID : UUID.randomUUID().toString()));
+            File outputDir = new File("/attx-sb-shared/" + getAgentID() + "/" + (correlationID != null ? correlationID : UUID.randomUUID().toString()));
 
             outputDir.mkdirs(); // TODO: add error handling
             File output = new File(outputDir, "result.nt");

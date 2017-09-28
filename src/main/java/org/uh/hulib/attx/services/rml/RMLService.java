@@ -101,7 +101,7 @@ public class RMLService {
        SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
        factory.setConnectionFactory(connectionFactory());
        factory.setMaxConcurrentConsumers(1);
-       factory.setRecoveryInterval(15000l);
+       factory.setRecoveryInterval(15000l);       
        return factory;
      }
    
