@@ -59,8 +59,9 @@ public class RMLServiceMessageListener {
         String replyTo = message.getMessageProperties().getReplyTo();
         try {
             ObjectMapper mapper = new ObjectMapper();
-
-            RMLServiceRequest request = mapper.readValue(new String(message.getBody(), "UTF-8"), RMLServiceRequest.class);
+            String messageStr = new String(message.getBody(), "UTF-8");
+            System.out.println(messageStr);
+            RMLServiceRequest request = mapper.readValue(messageStr, RMLServiceRequest.class);
 
             System.out.println(request.getPayload().getMapping());
             System.out.println(request.getPayload().getSourceData());
