@@ -105,8 +105,6 @@ public class RMLServiceMessageListener {
             else {
                 template.convertAndSend(replyTo, (Object)mapper.writeValueAsString(response), new CorrelationData(correlationID));
             }
-            output.delete();
-            outputDir.delete();
             System.out.println("Reply sent");
         } catch (Exception ex) {
             ex.printStackTrace();
