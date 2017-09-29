@@ -93,7 +93,7 @@ public class RMLServiceMessageListener {
             RMLServiceResponse response = new RMLServiceResponse();
             RMLServiceOutput responsePayload = new RMLServiceOutput();
             responsePayload.setStatus("SUCCESS");
-            responsePayload.setTransformedDatasetURL(output.toURI().toURL().toString());
+            responsePayload.setTransformedDatasetURL("file://" + output.getAbsolutePath());
 
             response.setPayload(responsePayload);
             
