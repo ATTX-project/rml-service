@@ -1,0 +1,13 @@
+{
+	"provenance": {
+		"context": {
+			"workflowID": "workflowID",
+			"activityID": "executionID",
+			"stepID": "stepID"
+		}
+	},
+	"payload": {
+		"sourceURI": "file:///input.txt",		
+		"mapping": "file:///confiuration.txt"
+	}
+}

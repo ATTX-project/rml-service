@@ -58,6 +58,7 @@ dependencies {
     compile "be.ugent.mmlab.rml:RML-Processor:0.4"
     testCompile group: 'org.springframework', name: 'spring-test', version: '4.3.10.RELEASE'
     testCompile group: 'org.springframework.boot', name: 'spring-boot-test', version: '1.5.6.RELEASE'
+    testCompile "org.mockito:mockito-core:2.+"
 
 }
 

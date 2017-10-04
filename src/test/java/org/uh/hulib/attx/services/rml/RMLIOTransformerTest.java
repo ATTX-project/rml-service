@@ -21,39 +21,22 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import static org.mockito.Mockito.*;
+import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.core.env.Environment;
 import org.springframework.test.context.junit4.SpringRunner;
 
 /**
  *
  * @author jkesanie
  */
-@RunWith(SpringRunner.class)
-@SpringBootTest
 public class RMLIOTransformerTest {
-
-    @Autowired
-    RMLIOTransformer instance;
-
-    public RMLIOTransformerTest() {
-    }
-
-    @BeforeClass
-    public static void setUpClass() {
-    }
-
-    @AfterClass
-    public static void tearDownClass() {
-    }
-
-    @Before
-    public void setUp() {
-    }
-
-    @After
-    public void tearDown() {
-    }
+    
+    RMLIOTransformer instance = new RMLIOTransformer();
 
     @Test   
     public void testSimpleJsonToRDF() throws Exception {

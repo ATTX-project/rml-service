@@ -5,6 +5,7 @@
  */
 package org.uh.hulib.attx.services.rml;
 
+import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.net.URL;
@@ -33,13 +34,12 @@ public class RMLServiceMessageListener {
 
     @Autowired
     RMLIOTransformer transformer;
-    
+
     @Autowired
     RabbitTemplate template;
 
     @Autowired
     Queue queue;
-
 
     @Autowired
     private Environment env;
@@ -58,52 +58,64 @@ public class RMLServiceMessageListener {
         String correlationID = message.getMessageProperties().getCorrelationIdString();
         String replyTo = message.getMessageProperties().getReplyTo();
         try {
+            File tempFile = null;
+            File tempFileConfig = null;
+            File output = null;
+            RMLServiceResponse response = new RMLServiceResponse();
+            RMLServiceOutput responsePayload = new RMLServiceOutput();
+            responsePayload.setContentType("application/n-triples");
             ObjectMapper mapper = new ObjectMapper();
             String messageStr = new String(message.getBody(), "UTF-8");
-            //System.out.println(messageStr);
-            RMLServiceRequest request = mapper.readValue(messageStr, RMLServiceRequest.class);
+            try {
+                
+                
 
-            System.out.println(request.getPayload().getMapping());
-            System.out.println(request.getPayload().getSourceData());
-            
-            RMLServiceInput payload = request.getPayload();
-            URL input = null;
-            File tempFile = null;
-            if (payload.getSourceURI() != null) {
-                input = new URL(payload.getSourceURI());
-            } else {
-                tempFile = File.createTempFile("rmlservice", "source");
-                FileUtils.write(tempFile, payload.getSourceData(), "UTF-8");
-                input = tempFile.toURI().toURL();
+                RMLServiceRequest request = mapper.readValue(messageStr, RMLServiceRequest.class);                
+                RMLServiceInput payload = request.getPayload();
+                if(payload == null)
+                    throw new Exception("Missing payload! " + messageStr);
+                URL input = null;
+               
+                if (payload.getSourceURI() != null) {
+                    input = new URL(payload.getSourceURI());
+                } else {
+                    tempFile = File.createTempFile("rmlservice", "source");
+                    FileUtils.write(tempFile, payload.getSourceData(), "UTF-8");
+                    input = tempFile.toURI().toURL();
+                }
+                tempFileConfig = File.createTempFile("rmlservice", "config");
+                FileUtils.write(tempFileConfig, payload.getMapping(), "UTF-8");
+                File outputDir = new File("/attx-sb-shared/" + getAgentID() + "/" + (correlationID != null ? correlationID : UUID.randomUUID().toString()));
+
+                outputDir.mkdirs(); // TODO: add error handling
+                output = new File(outputDir, "result.nt");
+
+                transformer.transformToRDF(input, output.toURI().toURL(), tempFileConfig.toURI().toURL());
+                responsePayload.setStatus("SUCCESS");
+                if(output != null)
+                    responsePayload.setTransformedDatasetURL("file://" + output.getAbsolutePath());
+               
+            } catch(JsonParseException jex) {
+                responsePayload.setStatus("ERROR");
+                responsePayload.setStatusMessage("Could not parse the input document." + messageStr);
+                
+            } catch (Exception ex) {
+                responsePayload.setStatus("ERROR");
+                responsePayload.setStatusMessage(ex.getMessage());
+
             }
-            File tempFileConfig = File.createTempFile("rmlservice", "config");
-            FileUtils.write(tempFileConfig, payload.getMapping(), "UTF-8");
-            File outputDir = new File("/attx-sb-shared/" + getAgentID() + "/" + (correlationID != null ? correlationID : UUID.randomUUID().toString()));
-
-            outputDir.mkdirs(); // TODO: add error handling
-            File output = new File(outputDir, "result.nt");
-
-            transformer.transformToRDF(input, output.toURI().toURL(), tempFileConfig.toURI().toURL());
-
             if (tempFile != null) {
                 tempFile.delete();
                 tempFileConfig.delete();
             }
-
-            RMLServiceResponse response = new RMLServiceResponse();
-            RMLServiceOutput responsePayload = new RMLServiceOutput();
-            responsePayload.setStatus("SUCCESS");
-            responsePayload.setTransformedDatasetURL("file://" + output.getAbsolutePath());
-
+            
+            
             response.setPayload(responsePayload);
-            
-            System.out.println("Done");
-            
-            if(correlationID != null) {
-                template.convertAndSend(replyTo, (Object)mapper.writeValueAsString(response));
-            }
-            else {
-                template.convertAndSend(replyTo, (Object)mapper.writeValueAsString(response), new CorrelationData(correlationID));
+
+            if (correlationID == null) {
+                template.convertAndSend(replyTo, (Object) mapper.writeValueAsString(response));
+            } else {
+                template.convertAndSend(replyTo, (Object) mapper.writeValueAsString(response), new CorrelationData(correlationID));
             }
             System.out.println("Reply sent");
         } catch (Exception ex) {
@@ -111,6 +123,5 @@ public class RMLServiceMessageListener {
         }
 
     }
-
 
 }
