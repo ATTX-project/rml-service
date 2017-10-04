@@ -92,8 +92,7 @@ public class RMLServiceMessageListener {
 
                 transformer.transformToRDF(input, output.toURI().toURL(), tempFileConfig.toURI().toURL());
                 responsePayload.setStatus("SUCCESS");
-                if(output != null)
-                    responsePayload.setTransformedDatasetURL("file://" + output.getAbsolutePath());
+                responsePayload.setTransformedDatasetURL("file://" + output.getAbsolutePath());
                
             } catch(JsonParseException jex) {
                 responsePayload.setStatus("ERROR");
