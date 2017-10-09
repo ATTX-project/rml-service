@@ -12,6 +12,7 @@ import java.net.URL;
 import java.util.UUID;
 import org.apache.commons.io.FileUtils;
 import org.springframework.amqp.core.Message;
+import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -24,6 +25,7 @@ import org.uh.hulib.attx.wc.uv.common.pojos.RMLServiceInput;
 import org.uh.hulib.attx.wc.uv.common.pojos.RMLServiceOutput;
 import org.uh.hulib.attx.wc.uv.common.pojos.RMLServiceRequest;
 import org.uh.hulib.attx.wc.uv.common.pojos.RMLServiceResponse;
+import org.uh.hulib.attx.wc.uv.common.pojos.prov.Context;
 
 /**
  *
@@ -58,66 +60,48 @@ public class RMLServiceMessageListener {
         String correlationID = message.getMessageProperties().getCorrelationIdString();
         String replyTo = message.getMessageProperties().getReplyTo();
         try {
-            File tempFile = null;
-            File tempFileConfig = null;
-            File output = null;
-            RMLServiceResponse response = new RMLServiceResponse();
-            RMLServiceOutput responsePayload = new RMLServiceOutput();
-            responsePayload.setContentType("application/n-triples");
-            ObjectMapper mapper = new ObjectMapper();
-            String messageStr = new String(message.getBody(), "UTF-8");
+            RMLServiceRequest request = null;
             try {
+                String requestID = (correlationID != null ? correlationID : UUID.randomUUID().toString());
+                String messageStr = new String(message.getBody(), "UTF-8");
+                request = RMLService.mapper.readValue(messageStr, RMLServiceRequest.class);
+                RMLServiceResponse response = transformer.transform(request, requestID);
                 
-                
-
-                RMLServiceRequest request = mapper.readValue(messageStr, RMLServiceRequest.class);                
-                RMLServiceInput payload = request.getPayload();
-                if(payload == null)
-                    throw new Exception("Missing payload! " + messageStr);
-                URL input = null;
-               
-                if (payload.getSourceURI() != null) {
-                    input = new URL(payload.getSourceURI());
+                if (correlationID == null) {
+                    template.convertAndSend(replyTo, response);
                 } else {
-                    tempFile = File.createTempFile("rmlservice", "source");
-                    FileUtils.write(tempFile, payload.getSourceData(), "UTF-8");
-                    input = tempFile.toURI().toURL();
+                    template.convertAndSend(replyTo, response, new CorrelationData(correlationID));
                 }
-                tempFileConfig = File.createTempFile("rmlservice", "config");
-                FileUtils.write(tempFileConfig, payload.getMapping(), "UTF-8");
-                File outputDir = new File("/attx-sb-shared/" + getAgentID() + "/" + (correlationID != null ? correlationID : UUID.randomUUID().toString()));
-
-                outputDir.mkdirs(); // TODO: add error handling
-                output = new File(outputDir, "result.nt");
-
-                transformer.transformToRDF(input, output.toURI().toURL(), tempFileConfig.toURI().toURL());
-                responsePayload.setStatus("SUCCESS");
-                responsePayload.setTransformedDatasetURL("file://" + output.getAbsolutePath());
-               
-            } catch(JsonParseException jex) {
-                responsePayload.setStatus("ERROR");
-                responsePayload.setStatusMessage("Could not parse the input document." + messageStr);
-                
             } catch (Exception ex) {
-                responsePayload.setStatus("ERROR");
-                responsePayload.setStatusMessage(ex.getMessage());
-
+                // TODO: what if request is null?                
+                Context ctx = request.getProvenance().getContext();
+                String errorResponse = "{\n"
+                    + "	\"provenance\": {\n"
+                    + "		\"context\": {\n"
+                    + "			\"workflowID\": \"" + ctx.getWorkflowID() + "\",\n"
+                    + "			\"activityID\": \"" + ctx.getActivityID()+ "\",\n"
+                    + "			\"stepID\": \"" + ctx.getStepID()+ "\"\n"
+                    + "		}\n"
+                    + "	},"
+                    + "    \"payload\": {\n"
+                    + "        \"contentType\": \"application/n-triples\",\n"
+                    + "        \"status\": \"ERROR\",\n"
+                    + "        \"statusMessage\": \"" + ex.getMessage() + "\",\n"
+                    + "        \"transformedDatasetURL\": null\n"
+                    + "    }\n"
+                    + "}";
+                
+                byte[] body = errorResponse.getBytes();
+                MessageProperties props = new MessageProperties();
+                if (correlationID != null) {
+                    props.setCorrelationIdString(correlationID);
+                }
+                props.setReplyTo(replyTo);
+                Message responseMessage = new Message(body, props);                
+                template.send(replyTo, responseMessage);
             }
-            if (tempFile != null) {
-                tempFile.delete();
-                tempFileConfig.delete();
-            }
-            
-            
-            response.setPayload(responsePayload);
-
-            if (correlationID == null) {
-                template.convertAndSend(replyTo, (Object) mapper.writeValueAsString(response));
-            } else {
-                template.convertAndSend(replyTo, (Object) mapper.writeValueAsString(response), new CorrelationData(correlationID));
-            }
-            System.out.println("Reply sent");
         } catch (Exception ex) {
+            // TODO: handle message sending error
             ex.printStackTrace();
         }
 

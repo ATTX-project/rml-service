@@ -5,6 +5,7 @@
  */
 package org.uh.hulib.attx.services.rml;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
@@ -21,14 +22,23 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import static org.mockito.Mockito.*;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.springframework.amqp.core.Message;
+import org.springframework.amqp.rabbit.support.CorrelationData;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.env.Environment;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.uh.hulib.attx.wc.uv.common.pojos.RMLServiceInput;
+import org.uh.hulib.attx.wc.uv.common.pojos.RMLServiceOutput;
+import org.uh.hulib.attx.wc.uv.common.pojos.RMLServiceRequest;
+import org.uh.hulib.attx.wc.uv.common.pojos.RMLServiceResponse;
+import org.uh.hulib.attx.wc.uv.common.pojos.prov.Context;
+import org.uh.hulib.attx.wc.uv.common.pojos.prov.Provenance;
 
 /**
  *
@@ -36,18 +46,73 @@ import org.springframework.test.context.junit4.SpringRunner;
  */
 public class RMLIOTransformerTest {
     
+    
     RMLIOTransformer instance = new RMLIOTransformer();
-
+    
+    private ObjectMapper mapper = new ObjectMapper();
+    
+    private Provenance getProvenance() {
+        Provenance prov = new Provenance();
+        Context ctx = new Context();
+        ctx.setWorkflowID("workflow");
+        ctx.setActivityID("activity");
+        ctx.setStepID("step");
+        prov.setContext(ctx);
+        return prov;
+    }
+    
     @Test   
-    public void testSimpleJsonToRDF() throws Exception {
+    public void testTransformToRDF() throws Exception {
         File input = new File(getClass().getResource(
                 "/etsin-org-data.json").toURI());
         File mapping = new File(getClass().getResource(
                 "/etsin-org-map.ttl").toURI());
         File expOutput = new File(getClass().getResource("/etsin-org-result.nt").toURI());
-        
+
+        // basic run
         runTransformation(input, mapping, expOutput);
+        
+        // TODO: invalid mapping raises an error
+
     }
+    
+    /**
+     * Test of receive method, of class RMLServiceMessageListener.
+     */
+    @Test
+    public void testTransform() throws Exception {
+        RMLIOTransformer instance = mock(RMLIOTransformer.class);
+        when(instance.transformToRDF(any(), any(), any())).thenReturn(Boolean.TRUE);
+        when(instance.transform(any(), any())).thenCallRealMethod();
+        
+        // null payload throws an error
+        RMLServiceRequest request = new RMLServiceRequest();
+        request.setProvenance(getProvenance());        
+        
+        RMLServiceResponse response = instance.transform(request, "requestID");        
+        assertEquals("ERROR", response.getPayload().getStatus());
+        assertTrue(response.getPayload().getStatusMessage().contains("Missing payload"));
+        
+        // missing mapping throws an error
+        RMLServiceInput requestPayload = new RMLServiceInput();
+        request.setPayload(requestPayload);
+
+        response = instance.transform(request, "requestID");        
+        assertEquals("ERROR", response.getPayload().getStatus());
+        assertTrue(response.getPayload().getStatusMessage().contains("Missing mapping"));
+                
+        // output is correctly set 
+        requestPayload.setMapping("mapping");
+        response = instance.transform(request, "requestID");        
+        
+        System.out.println(response.getPayload().getTransformedDatasetURL());
+ 
+        assertNotNull(response);
+        assertEquals("application/n-triples", response.getPayload().getContentType());
+        assertNotEquals(null, response.getPayload().getTransformedDatasetURL());
+        assertTrue(response.getPayload().getTransformedDatasetURL().contains("requestID"));
+
+    }    
     
     private void runTransformation(File input, File mappings, File expOutput)  {
         File output = null;
