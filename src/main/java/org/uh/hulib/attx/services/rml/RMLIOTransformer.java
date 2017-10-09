@@ -55,11 +55,11 @@ public class RMLIOTransformer {
             
             URL input = null;
 
-            if (payload.getSourceURI() != null) {
-                input = new URL(payload.getSourceURI());
+            if ("URI".equals(payload.getType())) {
+                input = new URL(payload.getInput());
             } else {
                 tempFile = File.createTempFile("rmlservice", "source");
-                FileUtils.write(tempFile, payload.getSourceData(), "UTF-8");
+                FileUtils.write(tempFile, payload.getInput(), "UTF-8");
                 input = tempFile.toURI().toURL();
             }
             tempFileConfig = File.createTempFile("rmlservice", "config");
