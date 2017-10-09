@@ -37,9 +37,7 @@ jar {
 }
 
 // To make the spring-boot build do its thing before upload i.e. create the ube
-publish {
-    dependsOn assemble
-} 
+publish dependsOn assemble
 
 repositories {
     

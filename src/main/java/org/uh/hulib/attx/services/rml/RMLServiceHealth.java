@@ -27,10 +27,6 @@ public class RMLServiceHealth  extends AbstractHealthIndicator {
 
     @Autowired
     RabbitTemplate template;
-
-    public RMLServiceHealth() {
-        System.out.println("Health created");
-    }
     
     private String getVersion() {
         return this.template.execute(new ChannelCallback<String>() {
@@ -46,9 +42,16 @@ public class RMLServiceHealth  extends AbstractHealthIndicator {
     @Override
     protected void doHealthCheck(Health.Builder b) throws Exception {
         try {
-            b.up();
+            String version = getVersion();
+            if(version == null && "".equals(version)) {
+                b.outOfService();
+            }
+            else {
+                b.up();
+            }
+            
         }catch(Exception ex) {
-            b.down();
+            b.outOfService();
         }
         
     }
