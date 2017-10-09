@@ -105,7 +105,6 @@ public class RMLIOTransformerTest {
         requestPayload.setMapping("mapping");
         response = instance.transform(request, "requestID");        
         
-        System.out.println(response.getPayload().getTransformedDatasetURL());
  
         assertNotNull(response);
         assertEquals("application/n-triples", response.getPayload().getContentType());
