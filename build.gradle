@@ -11,6 +11,7 @@ ext {
     artifactRepoPort = "8081"
 }
 
+
 if (!project.hasProperty("artifactRepoURL")) {
     ext.artifactRepoURL = "http://${imageRepo}:${artifactRepoPort}"
 }
@@ -21,7 +22,6 @@ if (!project.hasProperty("artifactRepoUser")) {
 if (!project.hasProperty("artifactRepoPassword")) {
     ext.artifactRepoPassword = ""
 }
-
 
 compileJava {
     sourceCompatibility = 1.8
@@ -70,7 +70,7 @@ configurations {
 
 }
 
-bootRun {
+bootRun {    
     if ( project.hasProperty('brokerURL') ) {
         args project.brokerURL
     }
