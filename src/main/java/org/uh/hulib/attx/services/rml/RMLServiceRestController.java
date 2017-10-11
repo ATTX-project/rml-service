@@ -50,18 +50,4 @@ public class RMLServiceRestController {
         }
     }
     
-/*
-    @RequestMapping(
-            value = "/health",
-            method = RequestMethod.GET,
-            produces = {"application/json"},
-            consumes = {"application/json"})
-    public @ResponseBody
-    String health(@RequestBody RMLServiceRequest request) {    
-        // check for broker connection 
-        String status = "Running";
-        
-        return "{\"rmlservice\": \"" + status + "\"}";
-    }
-*/
 }

@@ -19,7 +19,9 @@ import java.io.FileOutputStream;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
 import org.apache.commons.io.FileUtils;
+import java.util.logging.Logger;
 import org.eclipse.rdf4j.repository.Repository;
 import org.eclipse.rdf4j.rio.RDFFormat;
 import org.springframework.stereotype.Service;
@@ -35,6 +37,8 @@ import org.uh.hulib.attx.wc.uv.common.pojos.RMLServiceResponse;
  */
 @Service
 public class RMLIOTransformer {
+    
+    private static Logger log = Logger.getLogger(RMLIOTransformer.class.toString());
 
     public RMLServiceResponse transform(RMLServiceRequest request, String requestID) throws Exception {
         File tempFile = null;
@@ -68,12 +72,16 @@ public class RMLIOTransformer {
 
             outputDir.mkdirs(); // TODO: add error handling
             output = new File(outputDir, "result.nt");
+            if(!outputDir.canWrite()) {
+                throw new Exception("output file " + output.getAbsolutePath() + " cannot be written.");
+            }
 
             transformToRDF(input, output.toURI().toURL(), tempFileConfig.toURI().toURL());
             responsePayload.setStatus("SUCCESS");
             responsePayload.setTransformedDatasetURL("file://" + output.getAbsolutePath());
 
         } catch (Exception ex) {
+            log.log(Level.SEVERE, "Could not process payload.", ex);
             responsePayload.setStatus("ERROR");
             responsePayload.setStatusMessage(ex.getMessage());
 
@@ -88,7 +96,8 @@ public class RMLIOTransformer {
         return response;
     }
 
-    protected boolean transformToRDF(URL input, URL outputFile, URL configuration) throws Exception {
+    protected boolean transformToRDF(URL input, URL outputURL, URL configuration) throws Exception {
+        
         Map<String, String> parameters = new HashMap<String, String>();
         parameters.put("filename", input.getFile());
 
@@ -104,9 +113,8 @@ public class RMLIOTransformer {
                 mapping, "http://example.com", parameters, null);
 
         if (output != null) {
-            FileOutputStream out = new FileOutputStream(outputFile.getFile());
-            output.dumpRDF(out, RDFFormat.NTRIPLES);
-
+            FileOutputStream out = new FileOutputStream(outputURL.getFile());
+            output.dumpRDF(out, RDFFormat.NTRIPLES);                
         } else {
 
             throw new Exception("Error occured");
