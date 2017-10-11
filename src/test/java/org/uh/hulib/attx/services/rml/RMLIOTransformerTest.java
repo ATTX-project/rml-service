@@ -80,11 +80,6 @@ public class RMLIOTransformerTest {
         assertEquals("ERROR", response.getPayload().getStatus());
         assertTrue(response.getPayload().getStatusMessage().contains("Missing mapping"));
                 
-        // throws write error  
-        requestPayload.setMapping("mapping");
-        response = instance.transform(request, "requestID");        
-        assertEquals("ERROR", response.getPayload().getStatus());
-        assertTrue(response.getPayload().getStatusMessage().contains("cannot be written"));        
     }    
     
     private void runTransformation(File input, File mappings, File expOutput)  {
