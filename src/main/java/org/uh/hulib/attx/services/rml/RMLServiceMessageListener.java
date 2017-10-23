@@ -10,6 +10,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.net.URL;
 import java.util.UUID;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.apache.commons.io.FileUtils;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageProperties;
@@ -34,6 +36,8 @@ import org.uh.hulib.attx.wc.uv.common.pojos.prov.Context;
 @Component
 public class RMLServiceMessageListener {
 
+    private static Logger log = Logger.getLogger(RMLServiceMessageListener.class.toString());
+    
     @Autowired
     RMLIOTransformer transformer;
 
@@ -57,8 +61,11 @@ public class RMLServiceMessageListener {
 
     @RabbitListener(queues = "#{getQueueName}")
     public void receive(Message message) {
+        log.log(Level.INFO, "Received message");
         String correlationID = message.getMessageProperties().getCorrelationIdString();
         String replyTo = message.getMessageProperties().getReplyTo();
+        log.log(Level.INFO, "correlationID:" + correlationID);
+        log.log(Level.INFO, "ReplyTo:" + replyTo);
         try {
             RMLServiceRequest request = null;
             try {
@@ -66,13 +73,17 @@ public class RMLServiceMessageListener {
                 String messageStr = new String(message.getBody(), "UTF-8");
                 request = RMLService.mapper.readValue(messageStr, RMLServiceRequest.class);
                 RMLServiceResponse response = transformer.transform(request, requestID);
-                
+                if(response != null)
+                    log.log(Level.INFO, "Response status:" + response.getPayload().getStatus());
+                else
+                    log.log(Level.INFO, "Response was null");
                 if (correlationID == null) {
                     template.convertAndSend(replyTo, response);
                 } else {
                     template.convertAndSend(replyTo, response, new CorrelationData(correlationID));
                 }
             } catch (Exception ex) {
+                log.log(Level.SEVERE, "Sending basic reply failed.", ex);
                 // TODO: what if request is null?                
                 Context ctx = request.getProvenance().getContext();
                 String errorResponse = "{\n"
