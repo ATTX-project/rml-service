@@ -38,6 +38,8 @@ public class RMLServiceMessageListener {
 
     private static Logger log = Logger.getLogger(RMLServiceMessageListener.class.toString());
     
+    private ObjectMapper mapper = new ObjectMapper();
+    
     @Autowired
     RMLIOTransformer transformer;
 
@@ -61,7 +63,7 @@ public class RMLServiceMessageListener {
 
     @RabbitListener(queues = "#{getQueueName}")
     public void receive(Message message) {
-        log.log(Level.INFO, "Received message");
+        log.log(Level.INFO, "Received message -");
         String correlationID = message.getMessageProperties().getCorrelationIdString();
         String replyTo = message.getMessageProperties().getReplyTo();
         log.log(Level.INFO, "correlationID:" + correlationID);
@@ -73,14 +75,20 @@ public class RMLServiceMessageListener {
                 String messageStr = new String(message.getBody(), "UTF-8");
                 request = RMLService.mapper.readValue(messageStr, RMLServiceRequest.class);
                 RMLServiceResponse response = transformer.transform(request, requestID);
-                if(response != null)
+                
+                String responseStr = mapper.writeValueAsString(response);
+                if(response != null) {
                     log.log(Level.INFO, "Response status:" + response.getPayload().getStatus());
-                else
+                    log.log(Level.INFO, response.getPayload().getTransformedDatasetURL());
+                }
+                else {
                     log.log(Level.INFO, "Response was null");
+                }
                 if (correlationID == null) {
-                    template.convertAndSend(replyTo, response);
+                    log.log(Level.INFO, "Sending response without correlation ID to " + replyTo);                    
+                    template.convertAndSend(replyTo, responseStr);
                 } else {
-                    template.convertAndSend(replyTo, response, new CorrelationData(correlationID));
+                    template.convertAndSend(replyTo, responseStr);
                 }
             } catch (Exception ex) {
                 log.log(Level.SEVERE, "Sending basic reply failed.", ex);
