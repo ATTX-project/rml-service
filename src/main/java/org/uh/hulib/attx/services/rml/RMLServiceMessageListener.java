@@ -74,6 +74,7 @@ public class RMLServiceMessageListener {
                 String requestID = (correlationID != null ? correlationID : UUID.randomUUID().toString());
                 String messageStr = new String(message.getBody(), "UTF-8");
                 request = RMLService.mapper.readValue(messageStr, RMLServiceRequest.class);
+                                
                 RMLServiceResponse response = transformer.transform(request, requestID);
                 
                 String responseStr = mapper.writeValueAsString(response);
@@ -88,7 +89,7 @@ public class RMLServiceMessageListener {
                     log.log(Level.INFO, "Sending response without correlation ID to " + replyTo);                    
                     template.convertAndSend(replyTo, responseStr);
                 } else {
-                    template.convertAndSend(replyTo, responseStr);
+                    template.convertAndSend(replyTo, (Object)responseStr, new CorrelationData(correlationID));
                 }
             } catch (Exception ex) {
                 log.log(Level.SEVERE, "Sending basic reply failed.", ex);
