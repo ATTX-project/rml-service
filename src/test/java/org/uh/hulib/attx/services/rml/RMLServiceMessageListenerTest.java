@@ -7,7 +7,8 @@ package org.uh.hulib.attx.services.rml;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
-import java.net.URL;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.apache.commons.io.FileUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -25,8 +26,9 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.rabbit.support.CorrelationData;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.env.Environment;
+import org.uh.hulib.attx.wc.uv.common.pojos.RMLServiceOutput;
 import org.uh.hulib.attx.wc.uv.common.pojos.RMLServiceResponse;
-
+  
 /**
  *
  * @author jkesanie
@@ -56,6 +58,19 @@ public class RMLServiceMessageListenerTest {
     public void init() {
         when(this.env.getProperty("agentID", "rmlservice")).thenReturn("rmlservice");
         when(this.queue.getName()).thenReturn("rmlservice");
+        
+        RMLServiceResponse response = new RMLServiceResponse();
+        response.setPayload(new RMLServiceOutput());
+        response.getPayload().setContentType("application/json");
+        response.getPayload().setStatus("SUCCESS");
+        response.getPayload().setStatusMessage("");
+        response.getPayload().setTransformedDatasetURL("file:///temp/file.nt");
+        
+        try {
+            when(this.transformer.transform(any(), any())).thenReturn(response);
+        } catch (Exception ex) {
+            Logger.getLogger(RMLServiceMessageListenerTest.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 
     /**
@@ -97,6 +112,8 @@ public class RMLServiceMessageListenerTest {
 
         verify(template, times(1)).convertAndSend(eq(replyTo), (Object) responseMessageCaptor.capture(), correlationDataCaptor.capture());        
 
+        // should send a provenance message
+        verify(template, times(1)).convertAndSend(eq("provenance.inbox"), (String)any());
     }    
     
     @Test
@@ -114,8 +131,11 @@ public class RMLServiceMessageListenerTest {
         Message responseMsg = responseMessageCaptor.getValue();
         RMLServiceResponse response = mapper.readValue(responseMsg.getBody(), RMLServiceResponse.class);
         assertEquals(response.getPayload().getStatusMessage(), statusMessage);        
+        
+        // should send a provenance message
+        verify(template, times(1)).convertAndSend(eq("provenance.inbox"), (String)any());
+        
     }
-
 
 
     @Test
@@ -127,6 +147,10 @@ public class RMLServiceMessageListenerTest {
         // should send a reply message without correlationdata
         ArgumentCaptor<String> responseMessageCaptor = ArgumentCaptor.forClass(String.class);
         verify(template, times(1)).convertAndSend(eq(replyTo), (Object) responseMessageCaptor.capture());
+        
+        // should send a provenance message
+        verify(template, times(1)).convertAndSend(eq("provenance.inbox"), (String)any());
+        
 
     }
 
@@ -152,6 +176,9 @@ public class RMLServiceMessageListenerTest {
 
         assertEquals(response.getPayload().getStatusMessage(), statusMessage);
 
+        // should send a provenance message
+        verify(template, times(1)).convertAndSend(eq("provenance.inbox"), (String)any());
+        
     }
 
     private Message createMessage(String replyTo, String correlationID) throws Exception {

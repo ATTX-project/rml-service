@@ -8,6 +8,9 @@ package org.uh.hulib.attx.services.rml;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.springframework.amqp.core.Binding;
@@ -23,6 +26,11 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
+import org.uh.hulib.attx.wc.uv.common.pojos.ProvenanceMessage;
+import org.uh.hulib.attx.wc.uv.common.pojos.prov.Activity;
+import org.uh.hulib.attx.wc.uv.common.pojos.prov.Agent;
+import org.uh.hulib.attx.wc.uv.common.pojos.prov.Context;
+import org.uh.hulib.attx.wc.uv.common.pojos.prov.Provenance;
 
 /**
  *
@@ -32,10 +40,11 @@ import org.springframework.core.env.Environment;
 @EnableRabbit
 public class RMLService {
 
+    
     public static final String SERVICE_NAME = "rmlservice";
     public static ObjectMapper mapper = new ObjectMapper();
     public static final String VERSION = "0.1";
-    private static Logger log = Logger.getLogger(RMLService.class.toString());
+    private static Logger log = Logger.getLogger(RMLService.class.toString());        
 
     @Autowired
     private Environment env;
@@ -135,5 +144,28 @@ public class RMLService {
     public static void main(String[] args) throws InterruptedException {
 
         SpringApplication.run(RMLService.class, args);
+    }
+    
+    public static String getProvenanceMessage(Context ctx, String status, OffsetDateTime startTime, OffsetDateTime endTime) throws Exception {
+        ProvenanceMessage m = new ProvenanceMessage();
+        Provenance p = new Provenance();
+        p.setContext(ctx);
+        
+        Agent a = new Agent();
+        a.setID("rmlservice");
+        a.setRole("transformer");
+        p.setAgent(a);
+        
+        Activity act = new Activity();
+        act.setTitle("Transform data");
+        act.setType("ServiceExecution");
+        act.setStatus(status);
+        act.setStartTime(DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(startTime));
+        act.setEndTime(DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(endTime));        
+        p.setActivity(act);
+                
+        m.setProvenance(p);
+        
+        return mapper.writeValueAsString(m);
     }
 }

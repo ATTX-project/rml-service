@@ -9,6 +9,10 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.net.URL;
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalAccessor;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -28,6 +32,7 @@ import org.uh.hulib.attx.wc.uv.common.pojos.RMLServiceOutput;
 import org.uh.hulib.attx.wc.uv.common.pojos.RMLServiceRequest;
 import org.uh.hulib.attx.wc.uv.common.pojos.RMLServiceResponse;
 import org.uh.hulib.attx.wc.uv.common.pojos.prov.Context;
+import org.uh.hulib.attx.wc.uv.common.pojos.prov.Provenance;
 
 /**
  *
@@ -63,35 +68,60 @@ public class RMLServiceMessageListener {
 
     @RabbitListener(queues = "#{getQueueName}")
     public void receive(Message message) {
+        OffsetDateTime startTime = OffsetDateTime.now();
         log.log(Level.INFO, "Received message -");
         String correlationID = message.getMessageProperties().getCorrelationIdString();
         String replyTo = message.getMessageProperties().getReplyTo();
         log.log(Level.INFO, "correlationID:" + correlationID);
         log.log(Level.INFO, "ReplyTo:" + replyTo);
+        
         try {
             RMLServiceRequest request = null;
             try {
                 String requestID = (correlationID != null ? correlationID : UUID.randomUUID().toString());
                 String messageStr = new String(message.getBody(), "UTF-8");
                 request = RMLService.mapper.readValue(messageStr, RMLServiceRequest.class);
-                                
-                RMLServiceResponse response = transformer.transform(request, requestID);
                 
+                
+                RMLServiceResponse response = transformer.transform(request, requestID);
                 String responseStr = mapper.writeValueAsString(response);
                 if(response != null) {
                     log.log(Level.INFO, "Response status:" + response.getPayload().getStatus());
                     log.log(Level.INFO, response.getPayload().getTransformedDatasetURL());
                 }
                 else {
-                    log.log(Level.INFO, "Response was null");
+                    throw new Exception("Transformer returned a null response");
                 }
+                Provenance respProv = null;
+                if(request.getProvenance() != null && request.getProvenance().getContext() != null) {
+                    respProv = new Provenance();
+                    respProv.setContext(request.getProvenance().getContext());
+                    response.setProvenance(respProv);
+                }
+                else {
+                    log.warning("Incoming message did not contain any provenance context information. Provenance will not be recorded");
+                }
+
+                
                 if (correlationID == null) {
                     log.log(Level.INFO, "Sending response without correlation ID to " + replyTo);                    
                     template.convertAndSend(replyTo, responseStr);
                 } else {
                     template.convertAndSend(replyTo, (Object)responseStr, new CorrelationData(correlationID));
                 }
+
+                if(respProv != null) {
+                    log.log(Level.INFO, "Sending StepExecution prov message");
+                    OffsetDateTime endTime = OffsetDateTime.now();
+                    String provMessageStr = RMLService.getProvenanceMessage(
+                            respProv.getContext(), 
+                            "SUCCESS", 
+                            startTime,
+                            endTime);
+                    template.convertAndSend("provenance.inbox", provMessageStr);
+                }
             } catch (Exception ex) {
+                ex.printStackTrace();
                 log.log(Level.SEVERE, "Sending basic reply failed.", ex);
                 // TODO: what if request is null?                
                 Context ctx = request.getProvenance().getContext();
@@ -119,6 +149,13 @@ public class RMLServiceMessageListener {
                 props.setReplyTo(replyTo);
                 Message responseMessage = new Message(body, props);                
                 template.send(replyTo, responseMessage);
+                
+                String provMessageStr = RMLService.getProvenanceMessage(
+                        ctx, 
+                        "ERROR", 
+                        startTime,
+                        OffsetDateTime.now());
+                template.convertAndSend("provenance.inbox", provMessageStr);
             }
         } catch (Exception ex) {
             // TODO: handle message sending error
@@ -126,5 +163,4 @@ public class RMLServiceMessageListener {
         }
 
     }
-
 }

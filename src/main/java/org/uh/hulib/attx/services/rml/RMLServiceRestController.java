@@ -5,9 +5,11 @@
  */
 package org.uh.hulib.attx.services.rml;
 
+import java.time.OffsetDateTime;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -24,9 +26,12 @@ import org.uh.hulib.attx.wc.uv.common.pojos.RMLServiceResponse;
  */
 @RestController
 public class RMLServiceRestController {
-
+    private static Logger log = Logger.getLogger(RMLServiceRestController.class.toString());
     @Autowired
     RMLIOTransformer transformer;
+    
+    @Autowired
+    RabbitTemplate template;    
 
     @RequestMapping(
             value = "/" + RMLService.VERSION + "/transform",
@@ -36,7 +41,22 @@ public class RMLServiceRestController {
     public @ResponseBody
     RMLServiceResponse transform(@RequestBody RMLServiceRequest request) {
         try {
-            return transformer.transform(request, UUID.randomUUID().toString());
+            OffsetDateTime startTime = OffsetDateTime.now();
+            RMLServiceResponse response = transformer.transform(request, UUID.randomUUID().toString());
+            OffsetDateTime endTime = OffsetDateTime.now();
+            if(request.getProvenance() != null && request.getProvenance().getContext() != null) {
+                log.log(Level.INFO, "Sending StepExecution prov message");
+                String provMessageStr = RMLService.getProvenanceMessage(
+                        request.getProvenance().getContext(), 
+                        "SUCCESS", 
+                        startTime,
+                        endTime);
+                template.convertAndSend("provenance.inbox", provMessageStr);
+            }
+            else {
+                log.info("No provenance context found in the request");
+            }
+            return response;
         } catch (Exception ex) {
             Logger.getLogger(RMLServiceRestController.class.getName()).log(Level.SEVERE, null, ex);
             
