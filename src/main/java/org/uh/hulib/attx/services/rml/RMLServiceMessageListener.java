@@ -87,7 +87,7 @@ public class RMLServiceMessageListener {
                 String responseStr = mapper.writeValueAsString(response);
                 if(response != null) {
                     log.log(Level.INFO, "Response status:" + response.getPayload().getStatus());
-                    log.log(Level.INFO, response.getPayload().getTransformedDatasetURL());
+                    
                 }
                 else {
                     throw new Exception("Transformer returned a null response");

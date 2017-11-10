@@ -17,7 +17,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import org.apache.commons.io.FileUtils;
@@ -30,6 +32,7 @@ import org.uh.hulib.attx.wc.uv.common.pojos.RMLServiceInput;
 import org.uh.hulib.attx.wc.uv.common.pojos.RMLServiceOutput;
 import org.uh.hulib.attx.wc.uv.common.pojos.RMLServiceRequest;
 import org.uh.hulib.attx.wc.uv.common.pojos.RMLServiceResponse;
+import org.uh.hulib.attx.wc.uv.common.pojos.Source;
 
 /**
  *
@@ -47,7 +50,7 @@ public class RMLIOTransformer {
         RMLServiceResponse response = new RMLServiceResponse();
         RMLServiceOutput responsePayload = new RMLServiceOutput();
         responsePayload.setContentType("application/n-triples");
-        
+        responsePayload.setTransformedDatasetURIs(new ArrayList<String>());
         try {
             RMLServiceInput payload = request.getPayload();
             if (payload == null) {
@@ -56,29 +59,32 @@ public class RMLIOTransformer {
             if (payload.getMapping() == null) {
                 throw new Exception("Missing mapping! ");
             }
-            
-            URL input = null;
 
-            if ("URI".equals(payload.getType())) {
-                input = new URL(payload.getInput());
-            } else {
-                tempFile = File.createTempFile("rmlservice", "source");
-                FileUtils.write(tempFile, payload.getInput(), "UTF-8");
-                input = tempFile.toURI().toURL();
+            List<Source> sources = payload.getSourceData();
+            for(Source source : sources) {
+                URL input = null;
+
+                if ("URI".equals(source.getInputType())) {
+                    input = new URL(source.getInput());
+                } else {
+                    tempFile = File.createTempFile("rmlservice", "source");
+                    FileUtils.write(tempFile, source.getInput(), "UTF-8");
+                    input = tempFile.toURI().toURL();
+                }
+                tempFileConfig = File.createTempFile("rmlservice", "config");
+                FileUtils.write(tempFileConfig, payload.getMapping(), "UTF-8");
+                File outputDir = new File("/attx-sb-shared/" + SERVICE_NAME + "/" + requestID);
+
+                outputDir.mkdirs(); // TODO: add error handling
+                output = new File(outputDir, "result.nt");
+                if(!outputDir.canWrite()) {
+                    throw new Exception("output file " + output.getAbsolutePath() + " cannot be written.");
+                }
+
+                transformToRDF(input, output.toURI().toURL(), tempFileConfig.toURI().toURL());               
+                responsePayload.getTransformedDatasetURIs().add("file://" + output.getAbsolutePath());
             }
-            tempFileConfig = File.createTempFile("rmlservice", "config");
-            FileUtils.write(tempFileConfig, payload.getMapping(), "UTF-8");
-            File outputDir = new File("/attx-sb-shared/" + SERVICE_NAME + "/" + requestID);
-
-            outputDir.mkdirs(); // TODO: add error handling
-            output = new File(outputDir, "result.nt");
-            if(!outputDir.canWrite()) {
-                throw new Exception("output file " + output.getAbsolutePath() + " cannot be written.");
-            }
-
-            transformToRDF(input, output.toURI().toURL(), tempFileConfig.toURI().toURL());
-            responsePayload.setStatus("SUCCESS");
-            responsePayload.setTransformedDatasetURL("file://" + output.getAbsolutePath());
+            responsePayload.setStatus("SUCCESS");            
 
         } catch (Exception ex) {
             log.log(Level.SEVERE, "Could not process payload.", ex);

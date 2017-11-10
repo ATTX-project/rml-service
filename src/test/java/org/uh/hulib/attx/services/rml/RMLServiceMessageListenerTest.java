@@ -7,6 +7,7 @@ package org.uh.hulib.attx.services.rml;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.io.FileUtils;
@@ -64,7 +65,8 @@ public class RMLServiceMessageListenerTest {
         response.getPayload().setContentType("application/json");
         response.getPayload().setStatus("SUCCESS");
         response.getPayload().setStatusMessage("");
-        response.getPayload().setTransformedDatasetURL("file:///temp/file.nt");
+        response.getPayload().setTransformedDatasetURIs(new ArrayList<String>());
+        response.getPayload().getTransformedDatasetURIs().add("file:///temp/file.nt");
         
         try {
             when(this.transformer.transform(any(), any())).thenReturn(response);
