@@ -14,8 +14,8 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 import org.uh.hulib.attx.wc.uv.common.pojos.RMLServiceInput;
-import org.uh.hulib.attx.wc.uv.common.pojos.RMLServiceRequest;
-import org.uh.hulib.attx.wc.uv.common.pojos.RMLServiceResponse;
+import org.uh.hulib.attx.wc.uv.common.pojos.RMLServiceRequestMessage;
+import org.uh.hulib.attx.wc.uv.common.pojos.RMLServiceResponseMessage;
 import org.uh.hulib.attx.wc.uv.common.pojos.prov.Context;
 import org.uh.hulib.attx.wc.uv.common.pojos.prov.Provenance;
 
@@ -65,10 +65,10 @@ public class RMLIOTransformerTest {
         when(instance.transform(any(), any())).thenCallRealMethod();
         
         // null payload throws an error
-        RMLServiceRequest request = new RMLServiceRequest();
+        RMLServiceRequestMessage request = new RMLServiceRequestMessage();
         request.setProvenance(getProvenance());        
         
-        RMLServiceResponse response = instance.transform(request, "requestID");        
+        RMLServiceResponseMessage response = instance.transform(request, "requestID");        
         assertEquals("ERROR", response.getPayload().getStatus());
         assertTrue(response.getPayload().getStatusMessage().contains("Missing payload"));
         

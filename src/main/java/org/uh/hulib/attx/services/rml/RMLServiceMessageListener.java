@@ -29,8 +29,8 @@ import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 import org.uh.hulib.attx.wc.uv.common.pojos.RMLServiceInput;
 import org.uh.hulib.attx.wc.uv.common.pojos.RMLServiceOutput;
-import org.uh.hulib.attx.wc.uv.common.pojos.RMLServiceRequest;
-import org.uh.hulib.attx.wc.uv.common.pojos.RMLServiceResponse;
+import org.uh.hulib.attx.wc.uv.common.pojos.RMLServiceRequestMessage;
+import org.uh.hulib.attx.wc.uv.common.pojos.RMLServiceResponseMessage;
 import org.uh.hulib.attx.wc.uv.common.pojos.prov.Context;
 import org.uh.hulib.attx.wc.uv.common.pojos.prov.Provenance;
 
@@ -76,15 +76,17 @@ public class RMLServiceMessageListener {
         log.log(Level.INFO, "ReplyTo:" + replyTo);
         
         try {
-            RMLServiceRequest request = null;
+            RMLServiceRequestMessage request = null;
             try {
                 String requestID = (correlationID != null ? correlationID : UUID.randomUUID().toString());
                 String messageStr = new String(message.getBody(), "UTF-8");
-                request = RMLService.mapper.readValue(messageStr, RMLServiceRequest.class);
+                //log.info(messageStr);
+                request = RMLService.mapper.readValue(messageStr, RMLServiceRequestMessage.class);
                 
                 
-                RMLServiceResponse response = transformer.transform(request, requestID);
+                RMLServiceResponseMessage response = transformer.transform(request, requestID);
                 String responseStr = mapper.writeValueAsString(response);
+                //log.info(responseStr);
                 if(response != null) {
                     log.log(Level.INFO, "Response status:" + response.getPayload().getStatus());
                     
@@ -134,11 +136,9 @@ public class RMLServiceMessageListener {
                     + "		}\n"
                     + "	},"
                     + "    \"payload\": {\n"
-                    + "        \"contentType\": \"application/n-triples\",\n"
                     + "        \"status\": \"ERROR\",\n"
-                    + "        \"statusMessage\": \"" + ex.getMessage() + "\",\n"
-                    + "        \"transformedDatasetURL\": null\n"
-                    + "    }\n"
+                    + "        \"statusMessage\": \"" + ex.getMessage() + "\"\n"                        
+                    + "   }\n"
                     + "}";
                 
                 byte[] body = errorResponse.getBytes();

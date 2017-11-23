@@ -11,9 +11,6 @@ import be.ugent.mmlab.rml.mapdochandler.extraction.std.StdRMLMappingFactory;
 import be.ugent.mmlab.rml.mapdochandler.retrieval.RMLDocRetrieval;
 import be.ugent.mmlab.rml.model.RMLMapping;
 import be.ugent.mmlab.rml.model.dataset.RMLDataset;
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.net.URL;
@@ -30,8 +27,8 @@ import org.springframework.stereotype.Service;
 import static org.uh.hulib.attx.services.rml.RMLService.SERVICE_NAME;
 import org.uh.hulib.attx.wc.uv.common.pojos.RMLServiceInput;
 import org.uh.hulib.attx.wc.uv.common.pojos.RMLServiceOutput;
-import org.uh.hulib.attx.wc.uv.common.pojos.RMLServiceRequest;
-import org.uh.hulib.attx.wc.uv.common.pojos.RMLServiceResponse;
+import org.uh.hulib.attx.wc.uv.common.pojos.RMLServiceRequestMessage;
+import org.uh.hulib.attx.wc.uv.common.pojos.RMLServiceResponseMessage;
 import org.uh.hulib.attx.wc.uv.common.pojos.Source;
 
 /**
@@ -43,36 +40,40 @@ public class RMLIOTransformer {
     
     private static Logger log = Logger.getLogger(RMLIOTransformer.class.toString());
 
-    public RMLServiceResponse transform(RMLServiceRequest request, String requestID) throws Exception {
+    public RMLServiceResponseMessage transform(RMLServiceRequestMessage request, String requestID) throws Exception {
         File tempFile = null;
         File tempFileConfig = null;
         File output = null;
-        RMLServiceResponse response = new RMLServiceResponse();
-        RMLServiceOutput responsePayload = new RMLServiceOutput();
-        responsePayload.setContentType("application/n-triples");
-        responsePayload.setTransformedDatasetURIs(new ArrayList<String>());
+        RMLServiceResponseMessage response = new RMLServiceResponseMessage();
+        RMLServiceResponseMessage.RMLServiceResponsePayload responsePayload = response.new RMLServiceResponsePayload();
+        RMLServiceOutput responseOutput = new RMLServiceOutput();
+        responseOutput.setContentType("application/n-triples");
+        responseOutput.setOutput(new ArrayList<String>());
         try {
             RMLServiceInput payload = request.getPayload();
             if (payload == null) {
                 throw new Exception("Missing payload! ");
             }
-            if (payload.getMapping() == null) {
+            if (payload.getRmlMapping() == null) {
                 throw new Exception("Missing mapping! ");
             }
 
             List<Source> sources = payload.getSourceData();
+            log.info("Got sources2 :" + sources.size());
+            
             for(Source source : sources) {
                 URL input = null;
-
+                log.info(source.getInputType());
                 if ("URI".equals(source.getInputType())) {
                     input = new URL(source.getInput());
-                } else {
-                    tempFile = File.createTempFile("rmlservice", "source");
+                } else {                    
+                    tempFile = new File("/attx-sb-shared/rmlservice_" + System.currentTimeMillis());
+                    log.info(tempFile.getAbsolutePath());
                     FileUtils.write(tempFile, source.getInput(), "UTF-8");
                     input = tempFile.toURI().toURL();
                 }
                 tempFileConfig = File.createTempFile("rmlservice", "config");
-                FileUtils.write(tempFileConfig, payload.getMapping(), "UTF-8");
+                FileUtils.write(tempFileConfig, payload.getRmlMapping(), "UTF-8");
                 File outputDir = new File("/attx-sb-shared/" + SERVICE_NAME + "/" + requestID);
 
                 outputDir.mkdirs(); // TODO: add error handling
@@ -82,7 +83,8 @@ public class RMLIOTransformer {
                 }
 
                 transformToRDF(input, output.toURI().toURL(), tempFileConfig.toURI().toURL());               
-                responsePayload.getTransformedDatasetURIs().add("file://" + output.getAbsolutePath());
+                responseOutput.getOutput().add("file://" + output.getAbsolutePath());
+                
             }
             responsePayload.setStatus("SUCCESS");            
 
@@ -119,8 +121,9 @@ public class RMLIOTransformer {
                 mapping, "http://example.com", parameters, null);
 
         if (output != null) {
-            FileOutputStream out = new FileOutputStream(outputURL.getFile());
+            FileOutputStream out = new FileOutputStream(outputURL.getFile(), true);
             output.dumpRDF(out, RDFFormat.NTRIPLES);                
+            
         } else {
 
             throw new Exception("Error occured");

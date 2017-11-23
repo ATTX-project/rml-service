@@ -28,7 +28,7 @@ import org.springframework.amqp.rabbit.support.CorrelationData;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.env.Environment;
 import org.uh.hulib.attx.wc.uv.common.pojos.RMLServiceOutput;
-import org.uh.hulib.attx.wc.uv.common.pojos.RMLServiceResponse;
+import org.uh.hulib.attx.wc.uv.common.pojos.RMLServiceResponseMessage;
   
 /**
  *
@@ -60,13 +60,16 @@ public class RMLServiceMessageListenerTest {
         when(this.env.getProperty("agentID", "rmlservice")).thenReturn("rmlservice");
         when(this.queue.getName()).thenReturn("rmlservice");
         
-        RMLServiceResponse response = new RMLServiceResponse();
-        response.setPayload(new RMLServiceOutput());
-        response.getPayload().setContentType("application/json");
+        RMLServiceResponseMessage response = new RMLServiceResponseMessage();
+        RMLServiceResponseMessage.RMLServiceResponsePayload payload = response.new RMLServiceResponsePayload();
+        RMLServiceOutput output = new RMLServiceOutput();
+        payload.setRMLServiceOutput(output);
+        response.setPayload(payload);
+        response.getPayload().getRMLServiceOutput().setContentType("application/json");
         response.getPayload().setStatus("SUCCESS");
         response.getPayload().setStatusMessage("");
-        response.getPayload().setTransformedDatasetURIs(new ArrayList<String>());
-        response.getPayload().getTransformedDatasetURIs().add("file:///temp/file.nt");
+        response.getPayload().getRMLServiceOutput().setOutput(new ArrayList<String>());
+        response.getPayload().getRMLServiceOutput().getOutput().add("file:///temp/file.nt");
         
         try {
             when(this.transformer.transform(any(), any())).thenReturn(response);
@@ -131,7 +134,7 @@ public class RMLServiceMessageListenerTest {
         ArgumentCaptor<Message> responseMessageCaptor = ArgumentCaptor.forClass(Message.class);
         verify(template, times(1)).send(eq(replyTo), responseMessageCaptor.capture());
         Message responseMsg = responseMessageCaptor.getValue();
-        RMLServiceResponse response = mapper.readValue(responseMsg.getBody(), RMLServiceResponse.class);
+        RMLServiceResponseMessage response = mapper.readValue(responseMsg.getBody(), RMLServiceResponseMessage.class);
         assertEquals(response.getPayload().getStatusMessage(), statusMessage);        
         
         // should send a provenance message
@@ -174,7 +177,7 @@ public class RMLServiceMessageListenerTest {
         verify(template, times(1)).send(eq(replyTo), responseMessageCaptor.capture());
         
         Object o = responseMessageCaptor.getValue();
-        RMLServiceResponse response = mapper.readValue(new String(responseMessageCaptor.getValue().getBody(), "UTF-8"), RMLServiceResponse.class);
+        RMLServiceResponseMessage response = mapper.readValue(new String(responseMessageCaptor.getValue().getBody(), "UTF-8"), RMLServiceResponseMessage.class);
 
         assertEquals(response.getPayload().getStatusMessage(), statusMessage);
 

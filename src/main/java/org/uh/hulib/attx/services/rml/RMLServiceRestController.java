@@ -17,8 +17,8 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.uh.hulib.attx.wc.uv.common.pojos.RMLServiceOutput;
-import org.uh.hulib.attx.wc.uv.common.pojos.RMLServiceRequest;
-import org.uh.hulib.attx.wc.uv.common.pojos.RMLServiceResponse;
+import org.uh.hulib.attx.wc.uv.common.pojos.RMLServiceRequestMessage;
+import org.uh.hulib.attx.wc.uv.common.pojos.RMLServiceResponseMessage;
 
 /**
  *
@@ -39,10 +39,10 @@ public class RMLServiceRestController {
             produces = {"application/json"},
             consumes = {"application/json"})
     public @ResponseBody
-    RMLServiceResponse transform(@RequestBody RMLServiceRequest request) {
+    RMLServiceResponseMessage transform(@RequestBody RMLServiceRequestMessage request) {
         try {
             OffsetDateTime startTime = OffsetDateTime.now();
-            RMLServiceResponse response = transformer.transform(request, UUID.randomUUID().toString());
+            RMLServiceResponseMessage response = transformer.transform(request, UUID.randomUUID().toString());
             OffsetDateTime endTime = OffsetDateTime.now();
             if(request.getProvenance() != null && request.getProvenance().getContext() != null) {
                 log.log(Level.INFO, "Sending StepExecution prov message");
@@ -60,12 +60,12 @@ public class RMLServiceRestController {
         } catch (Exception ex) {
             Logger.getLogger(RMLServiceRestController.class.getName()).log(Level.SEVERE, null, ex);
             
-            RMLServiceResponse response = new RMLServiceResponse();
+            RMLServiceResponseMessage response = new RMLServiceResponseMessage();
             response.setProvenance(request.getProvenance());
-            RMLServiceOutput responsePayload = new RMLServiceOutput();
-            responsePayload.setStatus("ERROR");
-            responsePayload.setStatusMessage(ex.getMessage());
-            response.setPayload(responsePayload);
+            RMLServiceResponseMessage.RMLServiceResponsePayload payload = response.new RMLServiceResponsePayload();
+            payload.setStatus("ERROR");
+            payload.setStatusMessage(ex.getMessage());
+            response.setPayload(payload);
             return response;
         }
     }

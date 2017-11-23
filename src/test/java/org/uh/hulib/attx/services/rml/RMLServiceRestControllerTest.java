@@ -22,8 +22,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.uh.hulib.attx.wc.uv.common.pojos.RMLServiceRequest;
-import org.uh.hulib.attx.wc.uv.common.pojos.RMLServiceResponse;
+import org.uh.hulib.attx.wc.uv.common.pojos.RMLServiceRequestMessage;
 
 /**
  *
@@ -48,7 +47,7 @@ public class RMLServiceRestControllerTest {
     public void testTransform() throws Exception {
         ObjectMapper mapper = new ObjectMapper();
         String messageBody = FileUtils.readFileToString(new File(getClass().getResource("/transformURIRequest.json").toURI()));
-        RMLServiceRequest request = mapper.readValue(messageBody, RMLServiceRequest.class);
+        RMLServiceRequestMessage request = mapper.readValue(messageBody, RMLServiceRequestMessage.class);
         
         instance.transform(request);
         

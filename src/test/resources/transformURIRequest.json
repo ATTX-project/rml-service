@@ -7,8 +7,16 @@
 		}
 	},
 	"payload": {
-        "type": "URI",
-		"input": "file:///input.txt",		
-		"mapping": "file:///confiuration.txt"
+        "rmlserviceInput": {
+            "rmlMapping": "file:///confiuration.txt",
+            "sourceData": [
+                {
+                    "contentType": "application/json",
+                    "inputType": "URI",
+                    "input": "file:///input.txt"
+                }
+
+            ]
+        }
 	}
 }
