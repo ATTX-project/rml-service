@@ -49,6 +49,7 @@ public class RMLIOTransformer {
         RMLServiceOutput responseOutput = new RMLServiceOutput();
         responseOutput.setContentType("application/n-triples");
         responseOutput.setOutput(new ArrayList<String>());
+        responsePayload.setRMLServiceOutput(responseOutput);
         try {
             RMLServiceInput payload = request.getPayload();
             if (payload == null) {
