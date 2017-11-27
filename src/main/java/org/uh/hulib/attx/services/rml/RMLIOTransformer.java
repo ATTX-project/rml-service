@@ -51,7 +51,7 @@ public class RMLIOTransformer {
         responseOutput.setOutput(new ArrayList<String>());
         responsePayload.setRMLServiceOutput(responseOutput);
         try {
-            RMLServiceInput payload = request.getPayload();
+            RMLServiceInput payload = request.getPayload().getRMLServiceInput();
             if (payload == null) {
                 throw new Exception("Missing payload! ");
             }
@@ -84,10 +84,11 @@ public class RMLIOTransformer {
                 }
 
                 transformToRDF(input, output.toURI().toURL(), tempFileConfig.toURI().toURL());               
+                responseOutput.setOutputType("URI");
                 responseOutput.getOutput().add("file://" + output.getAbsolutePath());
                 
             }
-            responsePayload.setStatus("SUCCESS");            
+            responsePayload.setStatus("success");            
 
         } catch (Exception ex) {
             log.log(Level.SEVERE, "Could not process payload.", ex);

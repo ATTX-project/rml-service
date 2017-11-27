@@ -48,9 +48,11 @@ public class RMLServiceRestController {
                 log.log(Level.INFO, "Sending StepExecution prov message");
                 String provMessageStr = RMLService.getProvenanceMessage(
                         request.getProvenance().getContext(), 
-                        "SUCCESS", 
-                        startTime,
-                        endTime);
+                        "success", 
+                        startTime,                                                
+                        endTime,
+                        request.getPayload().getRMLServiceInput().getSourceData(),
+                        response.getPayload().getRMLServiceOutput().getOutput());
                 template.convertAndSend("provenance.inbox", provMessageStr);
             }
             else {

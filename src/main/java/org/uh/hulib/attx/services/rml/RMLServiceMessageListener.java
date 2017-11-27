@@ -13,6 +13,7 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalAccessor;
+import java.util.ArrayList;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -117,9 +118,11 @@ public class RMLServiceMessageListener {
                     OffsetDateTime endTime = OffsetDateTime.now();
                     String provMessageStr = RMLService.getProvenanceMessage(
                             respProv.getContext(), 
-                            "SUCCESS", 
+                            "success", 
                             startTime,
-                            endTime);
+                            endTime,
+                            request.getPayload().getRMLServiceInput().getSourceData(),
+                            response.getPayload().getRMLServiceOutput().getOutput());
                     template.convertAndSend("provenance.inbox", provMessageStr);
                 }
             } catch (Exception ex) {
@@ -154,7 +157,9 @@ public class RMLServiceMessageListener {
                         ctx, 
                         "ERROR", 
                         startTime,
-                        OffsetDateTime.now());
+                        OffsetDateTime.now(),
+                        request.getPayload().getRMLServiceInput().getSourceData(),
+                        new ArrayList<String>());
                 template.convertAndSend("provenance.inbox", provMessageStr);
             }
         } catch (Exception ex) {

@@ -66,7 +66,7 @@ public class RMLServiceMessageListenerTest {
         payload.setRMLServiceOutput(output);
         response.setPayload(payload);
         response.getPayload().getRMLServiceOutput().setContentType("application/json");
-        response.getPayload().setStatus("SUCCESS");
+        response.getPayload().setStatus("success");
         response.getPayload().setStatusMessage("");
         response.getPayload().getRMLServiceOutput().setOutput(new ArrayList<String>());
         response.getPayload().getRMLServiceOutput().getOutput().add("file:///temp/file.nt");

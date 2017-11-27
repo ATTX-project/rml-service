@@ -11,6 +11,10 @@ import java.net.URISyntaxException;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.springframework.amqp.core.Binding;
@@ -27,9 +31,11 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
 import org.uh.hulib.attx.wc.uv.common.pojos.ProvenanceMessage;
+import org.uh.hulib.attx.wc.uv.common.pojos.Source;
 import org.uh.hulib.attx.wc.uv.common.pojos.prov.Activity;
 import org.uh.hulib.attx.wc.uv.common.pojos.prov.Agent;
 import org.uh.hulib.attx.wc.uv.common.pojos.prov.Context;
+import org.uh.hulib.attx.wc.uv.common.pojos.prov.DataProperty;
 import org.uh.hulib.attx.wc.uv.common.pojos.prov.Provenance;
 
 /**
@@ -45,6 +51,7 @@ public class RMLService {
     public static ObjectMapper mapper = new ObjectMapper();
     public static final String VERSION = "0.1";
     private static Logger log = Logger.getLogger(RMLService.class.toString());        
+
 
     @Autowired
     private Environment env;
@@ -146,7 +153,7 @@ public class RMLService {
         SpringApplication.run(RMLService.class, args);
     }
     
-    public static String getProvenanceMessage(Context ctx, String status, OffsetDateTime startTime, OffsetDateTime endTime) throws Exception {
+    public static String getProvenanceMessage(Context ctx, String status, OffsetDateTime startTime, OffsetDateTime endTime, List<Source> sourceData, List<String> output) throws Exception {
         ProvenanceMessage m = new ProvenanceMessage();
         Provenance p = new Provenance();
         p.setContext(ctx);
@@ -164,7 +171,28 @@ public class RMLService {
         act.setEndTime(DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(endTime));        
         p.setActivity(act);
                 
-        m.setProvenance(p);
+        Map<String, Object> payload = new HashMap<String, Object>();
+        p.setInput(new ArrayList<DataProperty>());
+        p.setOutput(new ArrayList<DataProperty>());
+        for(int i = 0; i < sourceData.size(); i++) {
+            Source s = sourceData.get(i);            
+            DataProperty dp = new DataProperty();
+            dp.setKey("inputDataset" + i);
+            dp.setRole("Dataset");            
+            payload.put("inputDataset" + i, s.getInput());
+        }
+        
+        for(int i = 0; i < output.size(); i++) {
+            String s = output.get(i);            
+            DataProperty dp = new DataProperty();
+            dp.setKey("outputDataset" + i);
+            dp.setRole("Dataset");            
+            payload.put("outputDataset" + i, s);
+        }
+        
+        m.setProvenance(p);        
+        m.setPayload(payload);
+        
         
         return mapper.writeValueAsString(m);
     }
