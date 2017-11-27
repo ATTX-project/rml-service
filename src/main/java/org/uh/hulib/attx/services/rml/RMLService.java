@@ -178,7 +178,8 @@ public class RMLService {
             Source s = sourceData.get(i);            
             DataProperty dp = new DataProperty();
             dp.setKey("inputDataset" + i);
-            dp.setRole("Dataset");            
+            dp.setRole("Dataset");       
+            p.getInput().add(dp);
             payload.put("inputDataset" + i, s.getInput());
         }
         
@@ -186,7 +187,8 @@ public class RMLService {
             String s = output.get(i);            
             DataProperty dp = new DataProperty();
             dp.setKey("outputDataset" + i);
-            dp.setRole("Dataset");            
+            dp.setRole("Dataset");
+p           p.getOutput().add(dp);
             payload.put("outputDataset" + i, s);
         }
         
