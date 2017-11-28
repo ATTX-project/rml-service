@@ -180,7 +180,14 @@ public class RMLService {
             dp.setKey("inputDataset" + i);
             dp.setRole("Dataset");       
             p.getInput().add(dp);
-            payload.put("inputDataset" + i, s.getInput());
+            
+            if("data".equalsIgnoreCase(s.getInputType())) {                 
+                payload.put("inputDataset" + i, "http://data.hulib.helsinki.fi/attx/temp/" + s.getInput().hashCode() + "_"+ System.currentTimeMillis());
+            }
+            else {
+                payload.put("inputDataset" + i, s.getInput());
+            }
+            
         }
         
         for(int i = 0; i < output.size(); i++) {
