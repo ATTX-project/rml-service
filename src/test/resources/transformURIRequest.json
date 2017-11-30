@@ -1,0 +1,22 @@
+{
+	"provenance": {
+		"context": {
+			"workflowID": "workflowID",
+			"activityID": "executionID",
+			"stepID": "stepID"
+		}
+	},
+	"payload": {
+        "rmlserviceInput": {
+            "rmlMapping": "file:///confiuration.txt",
+            "sourceData": [
+                {
+                    "contentType": "application/json",
+                    "inputType": "URI",
+                    "input": "file:///input.txt"
+                }
+
+            ]
+        }
+	}
+}

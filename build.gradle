@@ -1,0 +1,104 @@
+plugins {
+    id 'org.springframework.boot' version '1.5.6.RELEASE'
+}
+
+apply plugin: 'java'
+apply plugin: 'application'
+apply plugin: 'maven-publish'
+
+ext {
+    imageRepo = "attx-dev"
+    artifactRepoPort = "8081"
+}
+
+
+if (!project.hasProperty("artifactRepoURL")) {
+    ext.artifactRepoURL = "http://${imageRepo}:${artifactRepoPort}"
+}
+if (!project.hasProperty("artifactRepoUser")) {
+    ext.artifactRepoUser = ""
+}
+
+if (!project.hasProperty("artifactRepoPassword")) {
+    ext.artifactRepoPassword = ""
+}
+
+compileJava {
+    sourceCompatibility = 1.8
+    targetCompatibility = 1.8
+    mainClassName = "org.uh.hulib.attx.services.rml.RMLService"
+}
+
+jar {
+    baseName = 'rmlservice'
+    group    = 'org.uh.hulib.attx.services'
+    version  = '0.0.1-SNAPSHOT'
+    manifest { attributes "Main-Class": mainClassName }
+}
+
+// To make the spring-boot build do its thing before upload i.e. create the ube
+publish {
+    dependsOn assemble
+}
+
+repositories {
+    
+    maven { url "$artifactRepoURL/repository/attx-releases"}
+    maven { url "$artifactRepoURL/repository/internal"}
+    mavenCentral()
+}
+
+dependencies {
+    testCompile group: 'junit', name: 'junit', version: '4.12'    
+    compile "org.springframework.boot:spring-boot-starter-web"
+    compile "org.springframework.boot:spring-boot-starter-amqp"
+    compile "org.springframework.boot:spring-boot-starter-actuator"
+    compile "org.uh.hulib.attx.wc.uv:uv-common:1.9-SNAPSHOT"
+    compile "com.fasterxml.jackson.core:jackson-core:2.9.0"
+    compile "com.fasterxml.jackson.core:jackson-annotations:2.9.0"
+    compile "com.fasterxml.jackson.core:jackson-databind:2.9.0"
+    compile "be.ugent.mmlab.rml:RML-Processor:0.4"
+    testCompile group: 'org.springframework', name: 'spring-test', version: '4.3.10.RELEASE'
+    testCompile group: 'org.springframework.boot', name: 'spring-boot-test', version: '1.5.6.RELEASE'
+    testCompile "org.mockito:mockito-core:2.+"
+
+}
+
+configurations {
+    runtime.exclude group: "ch.qos.logback", module: "logback-core"
+    
+
+}
+
+bootRun {    
+    if ( project.hasProperty('brokerURL') ) {
+        args project.brokerURL
+    }
+    if ( project.hasProperty('queue') ) {
+        args project.queue
+    }
+    if ( project.hasProperty('exchange') ) {
+        args project.exchange
+    }
+}
+
+
+publishing {
+    repositories {
+        maven {
+              url "${artifactRepoURL}/repository/attx-releases"
+              credentials {
+                  username "${artifactRepoUser}"
+                  password "${artifactRepoPassword}"
+              }
+        }
+    }
+    publications {
+        mavenJava(MavenPublication) {
+            groupId jar.group
+            artifactId jar.baseName
+            version jar.version       
+            from components.java
+        }
+    }
+}
