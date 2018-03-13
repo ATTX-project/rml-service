@@ -123,9 +123,9 @@ public class RMLIOTransformer {
                 mapping, "http://example.com", parameters, null);
 
         if (output != null) {
-            FileOutputStream out = new FileOutputStream(outputURL.getFile(), true);
-            output.dumpRDF(out, RDFFormat.NTRIPLES);                
-            
+            ByteArrayOutputStream out=new ByteArrayOutputStream();
+            output.dumpRDF(out, RDFFormat.NTRIPLES);               
+            FileUtils.writeStringToFile(new File(outputURL.getFile()),StringEscapeUtils.unescapeJava(new String(out.toByteArray(), "UTF-8")));                           
         } else {
 
             throw new Exception("Error occured");
