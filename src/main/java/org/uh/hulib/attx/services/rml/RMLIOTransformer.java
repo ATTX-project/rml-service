@@ -147,6 +147,7 @@ public class RMLIOTransformer {
                 }
                 
             }
+            FileUtils.writeLines(new File(outputURL.getFile()), newLines);
             
         } else {
 
