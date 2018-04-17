@@ -131,7 +131,7 @@ public class RMLIOTransformer {
             output.dumpRDF(out, RDFFormat.NTRIPLES);               
             FileUtils.writeStringToFile(new File(outputURL.getFile()),StringEscapeUtils.unescapeJava(new String(out.toByteArray(), "UTF-8")));                           
            // clean it up - this is really klunky
-            Pattern p = Pattern.compile("\\\".(\\\"+). \\.");
+            Pattern p = Pattern.compile("\\\"(.+)\\\" \\.");
             List<String> newLines = new ArrayList<String>();
             List<String> lines = FileUtils.readLines(new File(outputURL.getFile()));
             for (String line : lines) {
