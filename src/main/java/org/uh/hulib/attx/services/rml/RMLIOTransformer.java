@@ -138,7 +138,7 @@ public class RMLIOTransformer {
                 Matcher m = p.matcher(line);
                 if(m.find()) {
                     String g = m.group();
-                    String g2 = g.substring(1, g.length()-3).replaceAll("\"", "'");
+                    String g2 = g.substring(1, g.length()-3).replaceAll("\"", "'").replaceAll("\\\\", "\\\\\\\\");
                     String newLine = line.substring(0, m.start()) + "\"" + g2 + "\" .";
                     newLines.add(newLine);
                 }
