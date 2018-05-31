@@ -66,7 +66,8 @@ public class RMLIOTransformer {
             List<Source> sources = payload.getSourceData();
             log.info("Got sources2 :" + sources.size());
             
-            for(Source source : sources) {
+            int sourceIndex = 0;
+            for(Source source : sources) {                
                 URL input = null;
                 log.info(source.getInputType());
                 if ("URI".equals(source.getInputType())) {
@@ -82,7 +83,7 @@ public class RMLIOTransformer {
                 File outputDir = new File("/attx-sb-shared/" + SERVICE_NAME + "/" + requestID);
 
                 outputDir.mkdirs(); // TODO: add error handling
-                output = new File(outputDir, "result.nt");
+                output = new File(outputDir, "result-" + sourceIndex + ".nt");
                 if(!outputDir.canWrite()) {
                     throw new Exception("output file " + output.getAbsolutePath() + " cannot be written.");
                 }
@@ -90,6 +91,7 @@ public class RMLIOTransformer {
                 transformToRDF(input, output.toURI().toURL(), tempFileConfig.toURI().toURL());               
                 responseOutput.setOutputType("URI");
                 responseOutput.getOutput().add("file://" + output.getAbsolutePath());
+                sourceIndex++;
                 
             }
             responsePayload.setStatus("success");            
