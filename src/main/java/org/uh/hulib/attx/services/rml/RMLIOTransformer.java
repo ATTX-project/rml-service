@@ -51,7 +51,8 @@ public class RMLIOTransformer {
         RMLServiceResponseMessage response = new RMLServiceResponseMessage();
         RMLServiceResponseMessage.RMLServiceResponsePayload responsePayload = response.new RMLServiceResponsePayload();
         RMLServiceOutput responseOutput = new RMLServiceOutput();
-        responseOutput.setContentType("application/n-triples");
+        //responseOutput.setContentType("application/n-triples");
+        responseOutput.setContentType("application/rdf+xml");
         responseOutput.setOutput(new ArrayList<String>());
         responsePayload.setRMLServiceOutput(responseOutput);
         try {
@@ -130,6 +131,7 @@ public class RMLIOTransformer {
 
         if (output != null) {
             ByteArrayOutputStream out=new ByteArrayOutputStream();
+            /*
             output.dumpRDF(out, RDFFormat.NTRIPLES);               
             FileUtils.writeStringToFile(new File(outputURL.getFile()),StringEscapeUtils.unescapeJava(new String(out.toByteArray(), "UTF-8")));                           
            // clean it up - this is really klunky
@@ -145,11 +147,15 @@ public class RMLIOTransformer {
                     newLines.add(newLine);
                 }
                 else {
+                    
                     newLines.add(line);
                 }
                 
             }
-            FileUtils.writeLines(new File(outputURL.getFile()), newLines);            
+            FileUtils.writeLines(new File(outputURL.getFile()), newLines);     
+            */
+            output.dumpRDF(out, RDFFormat.RDFXML); 
+            out.close();            
             
         } else {
 
