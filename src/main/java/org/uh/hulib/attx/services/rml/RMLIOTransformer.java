@@ -155,6 +155,7 @@ public class RMLIOTransformer {
             FileUtils.writeLines(new File(outputURL.getFile()), newLines);     
             */
             output.dumpRDF(out, RDFFormat.RDFXML); 
+            FileUtils.writeStringToFile(new File(outputURL.getFile()),new String(out.toByteArray(), "UTF-8"));                           
             out.close();            
             
         } else {
