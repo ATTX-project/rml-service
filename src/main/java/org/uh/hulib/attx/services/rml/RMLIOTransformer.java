@@ -84,7 +84,7 @@ public class RMLIOTransformer {
                 File outputDir = new File("/attx-sb-shared/" + SERVICE_NAME + "/" + requestID);
 
                 outputDir.mkdirs(); // TODO: add error handling
-                output = new File(outputDir, "result-" + sourceIndex + ".nt");
+                output = new File(outputDir, "result-" + sourceIndex + ".xml");
                 if(!outputDir.canWrite()) {
                     throw new Exception("output file " + output.getAbsolutePath() + " cannot be written.");
                 }
