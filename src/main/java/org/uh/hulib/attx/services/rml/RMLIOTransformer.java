@@ -30,6 +30,10 @@ import org.uh.hulib.attx.wc.uv.common.pojos.RMLServiceOutput;
 import org.uh.hulib.attx.wc.uv.common.pojos.RMLServiceRequestMessage;
 import org.uh.hulib.attx.wc.uv.common.pojos.RMLServiceResponseMessage;
 import org.uh.hulib.attx.wc.uv.common.pojos.Source;
+import org.apache.commons.lang3.StringEscapeUtils;
+import java.io.ByteArrayOutputStream;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  *
@@ -47,7 +51,8 @@ public class RMLIOTransformer {
         RMLServiceResponseMessage response = new RMLServiceResponseMessage();
         RMLServiceResponseMessage.RMLServiceResponsePayload responsePayload = response.new RMLServiceResponsePayload();
         RMLServiceOutput responseOutput = new RMLServiceOutput();
-        responseOutput.setContentType("application/n-triples");
+        //responseOutput.setContentType("application/n-triples");
+        responseOutput.setContentType("application/rdf+xml");
         responseOutput.setOutput(new ArrayList<String>());
         responsePayload.setRMLServiceOutput(responseOutput);
         try {
@@ -62,7 +67,8 @@ public class RMLIOTransformer {
             List<Source> sources = payload.getSourceData();
             log.info("Got sources2 :" + sources.size());
             
-            for(Source source : sources) {
+            int sourceIndex = 0;
+            for(Source source : sources) {                
                 URL input = null;
                 log.info(source.getInputType());
                 if ("URI".equals(source.getInputType())) {
@@ -78,7 +84,7 @@ public class RMLIOTransformer {
                 File outputDir = new File("/attx-sb-shared/" + SERVICE_NAME + "/" + requestID);
 
                 outputDir.mkdirs(); // TODO: add error handling
-                output = new File(outputDir, "result.nt");
+                output = new File(outputDir, "result-" + sourceIndex + ".xml");
                 if(!outputDir.canWrite()) {
                     throw new Exception("output file " + output.getAbsolutePath() + " cannot be written.");
                 }
@@ -86,6 +92,7 @@ public class RMLIOTransformer {
                 transformToRDF(input, output.toURI().toURL(), tempFileConfig.toURI().toURL());               
                 responseOutput.setOutputType("URI");
                 responseOutput.getOutput().add("file://" + output.getAbsolutePath());
+                sourceIndex++;
                 
             }
             responsePayload.setStatus("success");            
@@ -123,8 +130,33 @@ public class RMLIOTransformer {
                 mapping, "http://example.com", parameters, null);
 
         if (output != null) {
-            FileOutputStream out = new FileOutputStream(outputURL.getFile(), true);
-            output.dumpRDF(out, RDFFormat.NTRIPLES);                
+            ByteArrayOutputStream out=new ByteArrayOutputStream();
+            /*
+            output.dumpRDF(out, RDFFormat.NTRIPLES);               
+            FileUtils.writeStringToFile(new File(outputURL.getFile()),StringEscapeUtils.unescapeJava(new String(out.toByteArray(), "UTF-8")));                           
+           // clean it up - this is really klunky
+            Pattern p = Pattern.compile("\\\"(.+)\\\" \\.");
+            List<String> newLines = new ArrayList<String>();
+            List<String> lines = FileUtils.readLines(new File(outputURL.getFile()));
+            for (String line : lines) {
+                Matcher m = p.matcher(line);
+                if(m.find()) {
+                    String g = m.group();
+                    String g2 = g.substring(1, g.length()-3).replaceAll("\"", "'").replaceAll("\\\\", "\\\\\\\\");
+                    String newLine = line.substring(0, m.start()) + "\"" + g2 + "\" .";
+                    newLines.add(newLine);
+                }
+                else {
+                    
+                    newLines.add(line);
+                }
+                
+            }
+            FileUtils.writeLines(new File(outputURL.getFile()), newLines);     
+            */
+            output.dumpRDF(out, RDFFormat.RDFXML); 
+            FileUtils.writeStringToFile(new File(outputURL.getFile()),new String(out.toByteArray(), "UTF-8"));                           
+            out.close();            
             
         } else {
 
